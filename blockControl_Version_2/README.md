@@ -1,11 +1,12 @@
 # EEP-Lua-Automatic-Train-Control
 
-You can download version 2 of the EEP Lua Automatic Traffic Control Project here.
+You can download version 2 of the EEP Lua Automatic Traffic Control Project here:
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_Version_2/EEP_blockControl.zip)
 
 An explanation on how it works and on how to fill the Lua tables with data that define your own layout goes with it:
 
-- English: `EEP_Lua_Automatic_Train_Control_v2.pdf`
-- German: `EEP_Lua_Automatische_Zugsteuerung_v2.pdf`
+- English: [`EEP_Lua_Automatic_Train_Control_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_Version_2/EEP_LUA_Automatic_Train_Control_v2.pdf)
+- German: [`EEP_Lua_Automatische_Zugsteuerung_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_Version_2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf)
 
 The EEP folder contains 5 working EEP demo layouts with the Lua code and the layout definition included.
 
@@ -17,8 +18,8 @@ The EEP folder contains 5 working EEP demo layouts with the Lua code and the lay
 
 - Demo 04: In the fourth layout we use two dead end tracks and see how we an make trains reverse there. We'll also run a third train, configure the layout in Lua and drive three trains around without collisions.
 
-- Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!
-You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from Benny.
+- Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!  
+You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from [Benny](https://www.eepforum.de/user/37-benny-bh2/).
 
 The `LUA` folder contains the `blockControl` module.
 

@@ -1,23 +1,5 @@
 # EEP-Lua-Automatic-Train-Control
 
-## NEWS April 2022
-
-Veröffentlichung der Version 2 mit dem Modul `blockControl`.
-
-## NEWS Februar 2022
-
-Frank Buchholz fügte dem Code mehrere Verbesserungen hinzu, wie zum Beispiel:
-
-- Automatische Erkennung von platzierten Zügen
-
-- Aufteilen des Codes in eine Benutzerkonfigurationsdatei und eine separate Steuerdatei, die nicht bearbeitet werden muss
-
-- Option zum Hinzufügen von "Zielblöcken", über die Lua mehr als einen Block vorausschaut, um einen möglichen Stillstand gegenläufiger Züge zu verhindern.
-
-Ich habe mich entschieden, den Code der Version 1 hier in seinem ursprünglichen, minimalistischen Zustand zu belassen.
-
-Um Franks Verbesserungen herunterzuladen, besuchen Sie bitte seine Github-Seite auf: <https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control>
-
 ## Die Geschichte zu diesem Projekt
 
 Im November 2021 bin ich in ein neues Haus gezogen. Neben den vielen Vorteilen, die das neue Haus bietet, gibt es ein kleines Problem: Es gibt keinen Platz mehr für meine Modelleisenbahn. EEP kam zur Rettung ... Ich kann immer noch Modelleisenbahnen entwerfen und 'bauen', und auf meinem 4k-Bildschirm macht es Spaß, daran herumzubasteln.
@@ -35,15 +17,31 @@ Ich habe mir folgende Ziele gesetzt:
 - Es soll für jede (Modell-)Bahnanlage funktionieren, ohne dass Lua-Code (neu)  geschrieben werden muss
 - Die Anlage wird ausschließlich durch die Eingabe von Daten über Züge, Signale, Weichen und Strecken definiert
 
+## NEWS Februar 2022
+
+Frank Buchholz fügte dem Code mehrere Verbesserungen hinzu, wie zum Beispiel:
+
+- Automatische Erkennung von platzierten Zügen
+- Aufteilen des Codes in eine Benutzerkonfigurationsdatei und eine separate Steuerdatei, die nicht bearbeitet werden muss
+- Option zum Hinzufügen von "Zielblöcken", über die Lua mehr als einen Block vorausschaut, um einen möglichen Stillstand gegenläufiger Züge zu verhindern.
+
+## NEWS April 2022
+
+Veröffentlichung der Version 2.
+
+Ich habe mich entschieden, den Code der Version 1 in seinem ursprünglichen, minimalistischen Zustand zu belassen.
+
 ## Versionen und andere Ordner
 
-Das Ergebnis dieses EEP Lua Automatic Traffic Control Projekts kann hier heruntergeladen werden.
+Dieses GitHub Repository enthält das Ergebnis dieses EEP Lua Automatic Traffic Control Projekts.
 
 Es gibt zwei Versionen des Projektes:
 
 - Version 1 nutzt ein effektives, minimalistisches Lua-Programm - kürzer als 200 Zeilen - um eine Anlage automatisch zu betreiben. Diese Version bleibt aus historischen Gründen verfügbar.
-
-- Version 2 verwendet erweiterten modularisierten Code mit weniger erforderlicher Konfiguration, mehr Optionen, stärkerer Robustheit, Konsistenzprüfungen und erweiterter Protokollierung. Verwenden sie diese Version!
+- Version 2 verwendet erweiterten modularisierten Code mit weniger erforderlicher Konfiguration, mehr Optionen, stärkerer Robustheit, Konsistenzprüfungen und erweiterter Protokollierung.  
+Verwenden sie diese Version!  
+Sie können das Paket hier herunterladen:
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_Version_2/EEP_blockControl.zip)
 
 Der "TC"-Ordner enthält die 5 Layouts in Traincontroller, für diejenigen, die vielleicht mit TC basteln möchten. Kostenlose Demo-Version: <https://www.freiwald.com/pages/download.htm>
 
