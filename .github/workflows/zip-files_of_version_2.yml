@@ -1,0 +1,48 @@
+# Create zip archive containing the files of version 2
+
+name: Archive files for version 2
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job
+  zip-files:
+  
+    # Condition for execution
+    if: github.repository == 'FrankBuchholz/EEP-LUA-Automatic-Train-Control'
+    
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Build
+      run: zip -r ./blockControl_Version_2/EEP_blockControl.zip blockControl_Version_2/EEP_blockControl/ blockControl_Version_2/LUA/ blockControl_Version_2/GBS/ blockControl_Version_2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_Version_2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
+
+    - name: Upload artifact # The artifact shows up at the action log
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ github.workspace }}/blockControl_Version_2
+        
+    - name: Commit & push # transfer the new zip file back into the repository
+      run: |
+        git config --local user.email "action@github.com"   # dummy 
+        git config --local user.name "GitHub Action"        # or use ${{ github.actor }}
+        git add blockControl_Version_2/EEP_blockControl.zip
+        git commit -m "Update blockControl_Version_2/EEP_blockControl.zip"
+        git push
