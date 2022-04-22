@@ -8,7 +8,7 @@ on:
   push:
     branches: [ main ]
     paths: 
-      - blockControl_Version_2/**
+      - blockControl_v2/**
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -31,18 +31,18 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Build
-      run: zip -r ./blockControl_Version_2/EEP_blockControl.zip blockControl_Version_2/EEP_blockControl/ blockControl_Version_2/LUA/ blockControl_Version_2/GBS/ blockControl_Version_2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_Version_2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
+      run: zip -r ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
 
     - name: Upload artifact # The artifact shows up at the action log
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        path: ${{ github.workspace }}/blockControl_Version_2
+        path: ${{ github.workspace }}/blockControl_v2
         
     - name: Commit & push # transfer the new zip file back into the repository
       run: |
         git config --local user.email "action@github.com"   # dummy 
         git config --local user.name "GitHub Action"        # or use ${{ github.actor }}
-        git add blockControl_Version_2/EEP_blockControl.zip
-        git commit -m "Update blockControl_Version_2/EEP_blockControl.zip"
+        git add blockControl_v2/EEP_blockControl.zip
+        git commit -m "Update blockControl_v2/EEP_blockControl.zip"
         git push
