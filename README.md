@@ -1,13 +1,23 @@
 # EEP-Lua-Automatic-Train-Control
 
-**NEWS February 2022**
-Frank Buchholz added several enhancements to the code, like:
- - Automatic detection of placed trains
- - Split the code into a user configuration file and a separate control file that doesn't require editing
- - Option to add 'destination blocks'via which Lua looks more than one block ahead to prevent possible opposing trains deadlock
-I decided to keep the code over here in its original, minimalist, state.
-To download Frank's enhancements please visit his Github page over here: https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control
+## NEWS April 2022
 
+Publication of version 2 with the module `blockControl`.
+
+## NEWS February 2022
+
+Frank Buchholz added several enhancements to the code, like:
+
+- Automatic detection of placed trains
+
+- Split the code into a user configuration file and a separate control file that doesn't require editing.
+
+- Option to add 'destination blocks'via which Lua looks more than one block ahead to prevent possible opposing trains deadlock.
+
+I decided to keep the code of version 1 over here in its original, minimalist, state.
+To download Frank's enhancements please visit his Github page over here: <https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control>
+
+## The story of this project
 
 November 2021 I moved to a new house. Besides the many pluses the new home offers there’s one little issue: there’s no room for my model railway anymore. EEP came to the rescue … I can still design and ‘build’ model railways and on my 4k screen they are fun to tinker with.
 
@@ -16,49 +26,28 @@ My old model railway was computer controlled with a program called Traincontroll
 It struck me that EEP has no automatic train control built in … or at least not in a way that is user friendly. There is however Lua, which allows us to write code to carry out these tasks. I wondered if it would be possible to write a Lua program that controls automatic train traffic in EEP, like Traincontroller does with a real model railway layout.
 
 I set myself the following goals:
- - Trains should automatically drive from block to block
- - It should be possible to specify which trains are allowed in which blocks
- - It should be possible to define stop times, per train per block
- - It should be possible to start / stop individual trains
- - It should work for any (model) railway layout without the need to (re)write Lua code 
- - The layout is defined solely by entering data on trains, signals, turnouts and routes
+
+- Trains should automatically drive from block to block
+- It should be possible to specify which trains are allowed in which blocks
+- It should be possible to define stop times, per train per block
+- It should be possible to start / stop individual trains
+- It should work for any (model) railway layout without the need to (re)write Lua code
+- The layout is defined solely by entering data on trains, signals, turnouts and routes
+
+## Versions and other folders
 
 The result of this EEP Lua Automatic Traffic Control Project can be downloaded here.
 
-An explanation on how it works and on how to fill the Lua tables with data that define your own layout goes with it:
- - English: EEP_Lua_Automatic+Train_Control.pdf
- - Deutsch: EEP_Lua_Automatische_Zugsteuerung.pdf
+You find two versions of this project:
 
-The EEP folder contains 5 working EEP demo layouts with the Lua code and the layout definition included. 
+- Version 1 uses effective and minimalistic Lua code - less than 200 lines - to run a layout automatically. This is available for historical reasons.
 
-The LUA folder contains 5 files with the Lua code to make it easier to edit the code in say Notepad++.
+- Version 2 uses enhanced modularized code with less configuration needed, more options, stronger robustness, consistency checks and extended logging. Go for this version!
 
-The GBS folder contains 5 files with the track view consoles, which you can insert yourself into the demo layouts.
-Below the start/stop signal are the train signals. These signals can also be used in automatic operation.
-The block signals (in the direction of travel at the edge of the tiles) and the memory signals (in the direction of travel in the middle of the tiles) as well as the switches must not be adjusted in automatic operation.
+The "TC" folder contains the 5 layouts in Traincontroller, for those who might like to tinker with TC. Free demo version: <https://www.freiwald.com/pages/download.htm>
 
-The TC folder contains the 5 layouts in Traincontroller, for those who might like to tinker with TC. Free demo version: https://www.freiwald.com/pages/download.htm
+The "Images" folder contains screenshots of the 5 layouts in EEP, SCARM and Traincontroller.
 
-The Images folder contains screenshots of the 5 layouts in EEP, SCARM and Traincontroller.
-
-The SCARM folder contains 2 SCARM files, one with layouts 1-4 (open menu View > Layers to switch layers) and one with layout 5, for those who might like to tinker with SCARM. Free demo version: https://www.scarm.info/index.php
-
-A series of YouTube videos can be found here:
-
-- [EEP LUA 01 - Automatic Train Control on Any Layout Without Writing Code](https://www.youtube.com/watch?v=00TUOHE6jGI&ab_channel=Rudysmodelrailway)<br>
-This is the first video in a series to demonstrate how automatic train traffic can be generated on any EEP (model) railway simulator layout, using a Lua script. The user doesn't have to (re)write any code, all that is needed is to define the layout by entering data on trains, signals and routes in a set of tables.
-
-- [EEP LUA 02 Automatic Train Control on Any EEP Layout](https://www.youtube.com/watch?v=vul1iGRF7BM&ab_channel=Rudysmodelrailway)<br>
-In the second video we use four blocks and add a second train. The video shows how this layout is specified in Lua.
-
-- [EEP Lua 03 Automatic Train Control on any EEP Layout](https://www.youtube.com/watch?v=Ie-ZppHUU1M&ab_channel=Rudysmodelrailway)<br>
-In the third video we'll add a two way block to the layout and see how to configure it in the Lua data.
-
-- [EEP Lua 04 Automatic Train Control on any EEP Layout](https://www.youtube.com/watch?v=3du73eQuRGM&ab_channel=Rudysmodelrailway)<br>
-In the fourth video we'll add two dead end tracks to the layout and see how we an make trains reverse there. We'll also add a third train, configure the layout in Lua and drive three trains around without collisions.
-
-- [EEP Lua 05 Automatic Train Control on any EEP Layout](https://www.youtube.com/watch?v=bJ38hEM8wnI&ab_channel=Rudysmodelrailway)<br>
-In the fifth video we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!
+The "SCARM" folder contains 2 SCARM files, one with layouts 1-4 (open menu View > Layers to switch layers) and one with layout 5, for those who might like to tinker with SCARM. Free demo version: <https://www.scarm.info/index.php>
 
 Any questions, comments and ideas are welcome. In the meantime … have fun.
-
