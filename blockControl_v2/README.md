@@ -27,4 +27,9 @@ The `GBS` folder contains 5 files with the track view consoles, which are insert
 Below the start/stop signal are the train signals. These signals can also be used in automatic operation.
 The block signals as well as the switches must not be adjusted in automatic operation.
 
+A series of YouTube videos can be found here:
+
+- [Automatic Train Traffic on any EEP Layout v2 - 01](https://www.youtube.com/watch?v=6X1fmBAHgpY&ab_channel=Rudysmodelrailway)  
+This is the first video in a series to demonstrate how automatic train traffic can be generated on any EEP (model) railway simulator layout, using a Lua script. The user doesn't have to (re)write any code, all that is needed is to define the layout by entering data on trains, signals and routes in a set of tables.
+
 Any questions, comments and ideas are welcome. In the meantime … have fun.

@@ -27,6 +27,11 @@ Der `GBS`-Ordner enthält 5 Dateien mit den Gleisbildstellpulten, die auch in di
 Unter dem Start/Stopp-Signal befinden sich die Zugsignale. Diese Signale können auch im automatischen Betrieb betätigt werden.
 Die Block-Signale sowie die Weichen dürfen im automatischen Betrieb nicht verstellt werden.
 
+Eine Reihe von YouTube-Videos finden Sie hier:
+
+- [Automatic Train Traffic on any EEP Layout v2 - 01](https://www.youtube.com/watch?v=6X1fmBAHgpY&ab_channel=Rudysmodelrailway)  
+Dies ist das erste Video einer Serie, in der gezeigt wird, wie mit Hilfe eines Lua-Skripts automatischer Zugverkehr auf jeder beliebigen Anlage des EEP (Modellbahn)-Simulators erzeugt werden kann. Der Benutzer muss keinen Code (neu) schreiben, sondern lediglich die Anlage definieren, indem er Daten über Züge, Signale und Strecken in eine Reihe von Tabellen eingibt.
+
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 
 Übersetzt mit www.DeepL.com/Translator
