@@ -1,3 +1,16 @@
+--[[
+-- Extend search path for 'require' with the folder of the layout
+package.path = 
+  "Resourcen\\Anlagen\\EEP-LUA-Automatic-Train-Control\\EEP_blockControl" 
+  .. "\\?.lua;" .. package.path
+-- Load the main script
+require("EEP_LUA_Layout_01_main")
+-- print to file
+require("PrintToFile_BH2"){file="Resourcen\\Anlagen\\EEP-LUA-Automatic-Train-Control\\log.txt"}
+clearlog()
+clearlog = function () print("\n\n----------------\n\n") end
+--]]
+
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- Ruud Boer, Frank Buchholz, April 2022
 -- EEP Lua code to automatically drive trains from block to block.
@@ -42,8 +55,7 @@ local routes = {
 local blockControl = require("blockControl") -- Load the module
 
 blockControl.init({                          -- Initialize the module
-  logLevel        = 1,
-
+--parameter name  = your local variable
   trains          = trains,   
   
   routes          = routes,
