@@ -32,4 +32,11 @@ A series of YouTube videos can be found here:
 - [Automatic Train Traffic on any EEP Layout v2 - 01](https://www.youtube.com/watch?v=6X1fmBAHgpY&ab_channel=Rudysmodelrailway)  
 This is the first video in a series to demonstrate how automatic train traffic can be generated on any EEP (model) railway simulator layout, using a Lua script. The user doesn't have to (re)write any code, all that is needed is to define the layout by entering data on trains, signals and routes in a set of tables.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 02](https://www.youtube.com/watch?v=qEFNnP-s14c&ab_channel=Rudysmodelrailway)  
+In demo 2 we add a second train. They drive around, controlled by Lua, without ever colliding. Lua only allows a train to start driving if the destination block and all the required turnouts on the way are free. If a train is allowed to start, Lua reserves the turnouts and the destination block; these are now unavailable to other trains until they are released again when the train arrives at its destination block, which is detected via the block entry sensor.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 03](https://www.youtube.com/watch?v=YouDOfVNHgk&ab_channel=Rudysmodelrailway)  
+Let's have a two way traffic track in the layout and see how this can be configured.
+A two way track is treated as two separate one way blocks on the same track. Both blocks have their own block signal and entry sensor. When Lua reserves one of the two blocks for a train, the other block has to be reserved too. Likewise, when released, the twin block also has to be released. We'll have to tell Lua which blocks are 'two way twin' blocks, such that this extra reservation and release can take place.
+
 Any questions, comments and ideas are welcome. In the meantime … have fun.

@@ -32,6 +32,13 @@ Eine Reihe von YouTube-Videos finden Sie hier:
 - [Automatic Train Traffic on any EEP Layout v2 - 01](https://www.youtube.com/watch?v=6X1fmBAHgpY&ab_channel=Rudysmodelrailway)  
 Dies ist das erste Video einer Serie, in der gezeigt wird, wie mit Hilfe eines Lua-Skripts automatischer Zugverkehr auf jeder beliebigen Anlage des EEP (Modellbahn)-Simulators erzeugt werden kann. Der Benutzer muss keinen Code (neu) schreiben, sondern lediglich die Anlage definieren, indem er Daten über Züge, Signale und Strecken in eine Reihe von Tabellen eingibt.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 02](https://www.youtube.com/watch?v=qEFNnP-s14c&ab_channel=Rudysmodelrailway)  
+In Demo 2 fügen wir einen zweiten Zug hinzu. Sie fahren, von Lua gesteuert, herum, ohne jemals zusammenzustoßen. Lua erlaubt einem Zug nur dann zu fahren, wenn der Zielblock und alle benötigten Weichen auf dem Weg frei sind. Wenn ein Zug losfahren darf, reserviert Lua die Weichen und den Zielblock; diese sind nun für andere Züge nicht mehr verfügbar, bis sie wieder freigegeben werden, wenn der Zug an seinem Zielblock ankommt, der über den Blockeingangssensor erkannt wird.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 03](https://www.youtube.com/watch?v=YouDOfVNHgk&ab_channel=Rudysmodelrailway)  
+Nehmen wir ein Zwei-Wege-Gleis in die Anlage auf und sehen wir uns an, wie dieses konfiguriert werden kann.
+Ein Zwei-Wege-Gleis wird als zwei separate Einbahnstraßenblöcke auf demselben Gleis behandelt. Beide Blöcke haben ihr eigenes Blocksignal und ihren eigenen Einfahrsensor. Wenn Lua einen der beiden Blöcke für einen Zug reserviert, muss auch der andere Block reserviert werden. Ebenso muss der Zwillingsblock bei Freigabe freigegeben werden. Wir müssen Lua mitteilen, welche Blöcke "Zweiweg-Zwillingsblöcke" sind, damit diese zusätzliche Reservierung und Freigabe stattfinden kann.
+
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 
 Übersetzt mit www.DeepL.com/Translator

@@ -5,6 +5,22 @@
 -- There's no need to write any LUA code, the code uses the data in the tables and variables.
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+--[[
+Version history:
+2.0.0   22.04.2022
+- Initial version 
+
+2.0.2   02.05 2022
+- Correction in 'make a list of all possible paths' to ignore dummy trains.
+- Tipp-texts using <br> instead of \n
+- Limitation: Currently only one route between same blocks can be processed, 
+  therefore only the shortest route between same blocks is used.
+- Typo in printStatus corrected.
+- Show module version depending of log level during init call.
+--]] 
+
+local _VERSION = 'v2.0.2 from 02.05 2022'
+
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -279,8 +295,26 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     
     collectBlock( fromBlock )                     -- Collect block numbers
     collectBlock( toBlock )
+    
+    -- Limitation: currently only one route between both blocks can be processed
+    -- Simple solution: use the first found route between both blocks
+    -- Better solution: use the shortest route between both blocks
+    local turn  = Route.turn or {}                -- turn is optional if there are no turnouts for this route
+    local found = false
+    for _r, _Route in pairs(routeTab) do
+      if _Route[1] == fromBlock and _Route[2] == toBlock then  -- Do we know such a route already?
+        found = true
+        printLog(1, "Alternate route from block ",fromBlock," to block ",toBlock," is ignored. Only the shortest route is used.")
+        if #_Route.turn > #turn then                           -- Is the new route shorter than the known route?
+          _Route.turn = turn                                   -- Store the shorter route
+        end		  
+        break
+      end
+    end
 
-    table.insert(routeTab, { fromBlock, toBlock, turn = Route.turn or {} } ) -- turn is optional if there are no turnouts for this route
+    if not found then 
+      table.insert(routeTab, { fromBlock, toBlock, turn = turn } ) -- Store only one route between both blocks 
+    end     
     
     if Route.turn then
       for to = 1, #Route.turn / 2 do                -- Collect turnout numbers
@@ -380,7 +414,7 @@ local function printData ()
     end  
   
     print(
-      "Train '",Train.name, 
+      "Train '",Train.name,"'", 
       (Train.signal and ", Signal "..Train.signal or ""),
       ", allowed blocks "..allowedBlocks
     )
@@ -418,6 +452,9 @@ Options.paths             Paths on which trains can go
   if Options.logLevel then
     logLevel = Options.logLevel
   end
+
+  printLog(1, "Version of module blockControl: " .. _VERSION)
+
 
   if Options.BetterContacts ~= nil then
     useBetterContacts = Options.BetterContacts
@@ -731,14 +768,14 @@ local function showSignalStatus()
     local pos = math.floor( EEPGetSignal( MAINSW ) )
     EEPChangeInfoSignal( MAINSW, 
       "<b>Initialization: Find trains in blocks</b>"
-      ..(logLevel >= 2 and string.format("\nSignal position %d", pos) or "")
+      ..(logLevel >= 2 and string.format("<br>Signal position %d", pos) or "")
     )
     EEPShowInfoSignal( MAINSW, true )
   else
     local pos = EEPGetSignal( MAINSW )
     EEPChangeInfoSignal(MAINSW, "Block control is active"
-      ..(logLevel >= 2 and string.format("\nSignal position %d", pos) or "")
-      .."\n".. (pos == MAINOFF and tippTextRED.."RED" or tippTextGREEN.."GREEN")
+      ..(logLevel >= 2 and string.format("<br>Signal position %d", pos) or "")
+      .."<br>".. (pos == MAINOFF and tippTextRED.."RED" or tippTextGREEN.."GREEN")
     )
     EEPShowInfoSignal( MAINSW, showTippText )
   end
@@ -757,9 +794,9 @@ local function showSignalStatus()
     EEPChangeInfoSignal( signal, 
         string.format("Block %d", b)
 --    ..string.format(" (%d)", signal)
-      ..( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("\nSignal position %d", pos) or "")
-      .."\n".. string.sub(trainName, 2, -1)                 -- Show train name without leading # character
-      .."\n".. ( Block.occupied and tippTextRED.."occupied" or ( Train and tippTextYELLOW.."reserved"  or tippTextGREEN.."free" ) )
+      ..( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("<br>Signal position %d", pos) or "")
+      .."<br>".. string.sub(trainName, 2, -1)                 -- Show train name without leading # character
+      .."<br>".. ( Block.occupied and tippTextRED.."occupied" or ( Train and tippTextYELLOW.."reserved"  or tippTextGREEN.."free" ) )
     )
     EEPShowInfoSignal( signal, showTippText )
   end
@@ -770,9 +807,9 @@ local function showSignalStatus()
       local pos = math.floor( EEPGetSignal( Train.signal ) )
       EEPChangeInfoSignal( Train.signal,
            string.sub(trainName, 2, -1)                     -- Show train name without leading # character
-        .. ( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("\nSignal position %d", pos) or "")
-        .. (Train.block and "\nBlock "..Train.block or "")
-        .. "\n"..(pos == TRAINSIGRED and tippTextRED.."STOP"   or tippTextGREEN.."GO")
+        .. ( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("<br>Signal position %d", pos) or "")
+        .. (Train.block and "<br>Block "..Train.block or "")
+        .. "<br>"..(pos == TRAINSIGRED and tippTextRED.."STOP"   or tippTextGREEN.."GO")
       )
       EEPShowInfoSignal( Train.signal, showTippText )
     end
@@ -782,7 +819,7 @@ local function showSignalStatus()
   for s, reserved in pairs(TurnReserved) do
     local pos = math.floor( EEPGetSwitch( s ) )
     EEPChangeInfoSwitch( s, 
-        "Switch "..s.."\nposition "..pos.."\n"..(reserved and tippTextYELLOW.."reserved" or tippTextGREEN.."free")
+        "Switch "..s.."<br>position "..pos.."<br>"..(reserved and tippTextYELLOW.."reserved" or tippTextGREEN.."free")
     )
     EEPShowInfoSwitch( s, showTippText and logLevel >= 0 )
   end
@@ -1070,10 +1107,11 @@ local function run ()
               ,"Search route from block ",pb," to block ",b," to release turnout"
             )
             
-          local turn = nil                                       -- Search route to release the turnouts
+          local turn = nil                                      -- Search route to release the turnouts
           for r, Route in pairs(routeTab) do                    -- (Full table scan is not very efficent but it works fine.)
-            if Route[1] == pb and Route[2] == b then
+            if Route[1] == pb and Route[2] == b then            -- Assumption: there exist only one route between both blocks
               turn = Route.turn
+              break                                             -- Use the first found route between both blocks
             end
           end
           if turn then
@@ -1131,7 +1169,7 @@ local function run ()
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  Make a list of all possible paths for trains who's stop stopTimer ran out
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-    if Train then                                                 -- A real train...
+    if Train and Train ~= DummyTrain then                         -- A real train...
       if Block.request and Block.stopTimer == 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
           printLog(2, praefix(),"Train '",Train.name,"' searches a new path from block ",b )
@@ -1165,13 +1203,14 @@ local function run ()
               local toBlock   = Path[k+1]
               if freePath then                                    -- Is it still a free path?
                 for r, Route in pairs(routeTab) do                -- Let's check if all turnouts are free to reach the next block
-                  if freePath and Route[1] == fromBlock and Route[2] == toBlock then
+                  if freePath and Route[1] == fromBlock and Route[2] == toBlock then -- Assumption: there exist only one route between both blocks
                     for to = 1, #Route.turn / 2 do                -- Check if the route turnouts are free
                       local switch = Route.turn[to*2-1]
                       freePath = freePath and not TurnReserved[ switch ]
                       
                       printLog(3, "From ",fromBlock," to ",toBlock," Check turnout ",switch," ",(TurnReserved[ switch ] and "free" or "locked"))
                     end
+                    break                                         --Use the first found route between both blocks
                   end
                 end
               end
@@ -1246,7 +1285,7 @@ local function run ()
       for r, Route in pairs(routeTab) do                          -- Search in all routes
         local fromBlock = Route[1]
         local toBlock   = Route[2]
-        if prevBlock == fromBlock and nextBlock == toBlock then
+        if prevBlock == fromBlock and nextBlock == toBlock then   -- Assumption: there exist only one route between both blocks
           for to = 1, #Route.turn / 2 do
             local switch = Route.turn[to*2-1]
             local pos    = Route.turn[to*2]
@@ -1254,6 +1293,7 @@ local function run ()
             EEPSetSwitch( switch, pos )                           -- Switch the turnout
             table.insert(turnouts, switch)
           end
+          break                                                   --Use the first found route between both blocks
         end
       end
       prevBlock = nextBlock                                       -- prepare to lock the next part of the path
@@ -1318,7 +1358,7 @@ end
 
 return {
 
-  _VERSION    = 'v2022-04-17',
+  _VERSION    = _VERSION,
 
   init        = init,       -- Call this function during initialization
   set         = set,        -- Set runtime parameters logLevel and showTippText
