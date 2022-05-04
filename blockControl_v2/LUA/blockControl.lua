@@ -17,9 +17,18 @@ Version history:
   therefore only the shortest route between same blocks is used.
 - Typo in printStatus corrected.
 - Show module version depending of log level during init call.
+
+2.0.3   under construction
+- Corrected list of allowed blocks for trains in function printData
+- Sorted lists by functions printData and printStatus
+- Show statistics of visited blocks by function printStatus
+- New parameter for function printStatus to define repetition frequency
+- Optimized detection of trains entering or leaving blocks via tracks (not finished yet)
+- Simplified prefix for print statements
+
 --]] 
 
-local _VERSION = 'v2.0.2 from 02.05 2022'
+local _VERSION = 'v2.0.3 from 04.05 2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -44,6 +53,22 @@ local function check (condition, ...)             -- Check a condition and show 
   if not condition then
     print(...)                                    -- Print variable number of argument values
   end
+end
+
+local function pairsByKeys (tab, func)              -- see http://www.lua.org/pil/19.3.html
+  local keys = {}                                   -- copy keys
+  for k in pairs(tab) do table.insert(keys, k) end
+  
+  table.sort(keys, func)                            -- sort keys by key respective by using given sort function
+  
+  local i = 0                                       -- iterator variable
+  local iterator = function ()                      -- iterator function
+    i = i + 1
+    if keys[i] == nil then return nil
+    else return keys[i], tab[keys[i]]
+    end
+  end
+  return iterator
 end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -93,6 +118,8 @@ local function collectBlock (k, s)                -- Collect new blocks into blo
       occupiedOld = nil,                          -- Old value, used to check for transitions from free to occupied
       request     = nil,                          -- Train which has a request for the block (nil = free)
       stopTimer   = 0,                            -- Waittime, decremented every EEPmain() cycle, which is 5x/s
+      
+      visits      = 0,                            -- Statistic counter how often a train has visited this block
     }
 
     EEPSetSignal( signal, BLKSIGRED, 1 )          -- Stop all trains at block signals
@@ -276,6 +303,7 @@ local function copyPaths (paths)
       },
     --]]
     for _, flatPath in pairs(flatPaths) do
+      flatPath.visits = 0                             -- Statistic counter how often a train used this path
       local fromBlock = flatPath[1]                   -- The first block is a starting block
       if not pathTab[fromBlock] then
         pathTab[fromBlock] = {}                       -- create new entry for this starting block
@@ -313,7 +341,13 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     end
 
     if not found then 
-      table.insert(routeTab, { fromBlock, toBlock, turn = turn } ) -- Store only one route between both blocks 
+      table.insert(routeTab, {                      -- Store only one route between both blocks 
+        fromBlock, 
+        toBlock, 
+        turn = turn, 
+        
+        visits = 0,                                 -- Statistic counter how often a train has used this route 
+      } )
     end     
     
     if Route.turn then
@@ -344,6 +378,7 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
         pathTab[fromBlock] = { }                  -- Create new entry for this starting block
       end
       local flatPath = { fromBlock, toBlock }
+      flatPath.visits = 0,                        -- Statistic counter how often a train used this path
       table.insert(pathTab[fromBlock], flatPath ) -- append entry to starting block
     end
   end
@@ -381,21 +416,32 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
       signal  = Train.signal,                     -- Train signal (optional)
       allowed = Train.allowed,                    -- Allowed blocks per train
       block   = nil,                              -- Current block where the train is
+      
+      visits  = 0,                                -- Statistic counter how often a train visited a block
     }
     
   end
 end
 
-
 local function printData ()
   
   print("\nBlocks:")
-  for b, Block in pairs(BlockTab) do
+  for b, Block in pairsByKeys(BlockTab) do
     if useBlockIndexNumbers then 
-      print("Block ",b," Signal ", Block.signal)
+      print("Block ",b," Signal ",Block.signal)
     else  
-      print("Block ", Block.signal)
+      print("Block ",Block.signal)
     end  
+  end
+
+  print("\nRoutes:")
+  local sortRoutes = function(a,b) 
+    local ra = routeTab[a]
+    local rb = routeTab[b]
+    return ra[1] == rb[1] and ra[2] < rb[2] or ra[1] < rb[1] 
+  end  
+  for _, Route in pairsByKeys(routeTab, sortRoutes) do
+    print("From block ",Route[1]," to block ",Route[2]," via turnouts ",table.concat(Route.turn, ", "))
   end
 
   print("\nExpanded paths:")
@@ -406,11 +452,13 @@ local function printData ()
   end
 
   print("\nTrains:")
-  for _, Train in pairs(TrainTab) do
+  for _, Train in pairsByKeys(TrainTab) do
     local allowedBlocks = ""
-    for b, waitTime in pairs(Train.allowed) do
-      --allowedBlocks = allowedBlocks.."["..b.."]="..waitTime .. ", "
-      allowedBlocks = allowedBlocks..b.." "
+    for b, waitTime in pairsByKeys(Train.allowed) do
+      if waitTime > 0 then
+        --allowedBlocks = allowedBlocks..(allowedBlocks == "" and "" or ", " ).."["..b.."]="..waitTime
+        allowedBlocks = allowedBlocks..(allowedBlocks == "" and "" or ", " )..b
+      end  
     end  
   
     print(
@@ -829,13 +877,19 @@ end
 -- @@@  Print current status of trains, blocks and routes
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-local function printStatus()
+local function printStatus( periodicTime )
 
-  print("\n*** Status ***\n")
+  if periodicTime and cycle % (periodicTime*5) ~= 0 then -- skip execution depending on cycle count if periodic execution is requested
+    return
+  end  
+
+  print("\n*** Status ***")
+
+  print(string.format("\nRun time: %8.0f sec", cycle / 5))
 
   print("\nTrains\n")
 
-  for trainName, Train in pairs(TrainTab) do
+  for trainName, Train in pairsByKeys(TrainTab) do
     
     local text = "Train '"..trainName.."'"
 
@@ -872,13 +926,15 @@ local function printStatus()
       text = text..", route requested"
     end
     
+    text = text..", visited blocks: "..Train.visits
+    
     print(text)
     
   end
 
   print("\nBlocks\n")
 
-  for b, Block in pairs(BlockTab) do
+  for b, Block in pairsByKeys(BlockTab) do
     
     local text = "Block "..b
   
@@ -900,8 +956,27 @@ local function printStatus()
       text = text..", timer "..string.format("%d", math.floor(Block.stopTimer/5)).." sec"
     end
     
+    text = text..", visited trains: "..Block.visits
+    
     print(text)
 
+  end
+
+  print("\nRoutes\n")
+
+  local sortRoutes = function(a,b) 
+    local ra = routeTab[a]
+    local rb = routeTab[b]
+    return ra[1] == rb[1] and ra[2] < rb[2] or ra[1] < rb[1] 
+  end
+  for r, Route in pairsByKeys(routeTab, sortRoutes) do
+    
+    local text = "Route from block "..Route[1].." to "..Route[2]
+    
+    text = text..", used by trains: "..Route.visits
+    
+    print(text)
+  
   end
 
   print("\n")
@@ -913,10 +988,8 @@ end
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 local function run ()
-  -- Praefix for print staments to show the cycle time
-  local function praefix()
-    return string.format("%8.1f ", cycle / 5)
-  end
+  
+  local praefix = string.format("%8.1f ", cycle / 5)  -- Praefix for print staments to show the cycle time
 
   cycle = cycle + 1                     -- EEPMain cycle number
 
@@ -974,7 +1047,7 @@ local function run ()
       local prevTrackTrainName = nil
       for k, track in pairs(Block.prev) do
         local ok, occupied, trainName = EEPIsTrackReserved( track, true )
-        if occupied and (not firstTrackTrainName or firstTrackTrainName == trainName) then -- ### not perfect 
+        if occupied and trainName == firstTrackTrainName then -- ### not perfect 
           prevTrackTrainName = trainName
         end
       end
@@ -984,7 +1057,7 @@ local function run ()
         and not prevTrackTrainName                                    -- and all previous tracks are now free
         and firstTrackTrainName                                       -- and the first track of the block is now occupied 
         and Block.prevTrackTrainNameOld ==  firstTrackTrainName then  -- and the trains are identical
-        printLog(1, praefix(), "Check tracks: Train "..firstTrackTrainName.." enters block "..b)
+        printLog(1, praefix, "Check tracks: Train "..firstTrackTrainName.." enters block "..b)
         enterBlock( firstTrackTrainName, b )
       end  
       
@@ -999,7 +1072,7 @@ local function run ()
       local nextTrackTrainName = nil
       for k, track in pairs(Block.next) do
         local ok, occupied, trainName = EEPIsTrackReserved( track, true )
-        if occupied and (not lastTrackTrainName or lastTrackTrainName == trainName) then -- ### not perfect
+        if occupied and trainName == Block.lastTrackTrainNameOld then -- ### not perfect
           nextTrackTrainName = trainName
         end
       end
@@ -1008,8 +1081,8 @@ local function run ()
        if   Block.lastTrackTrainNameOld                               -- If the last track was occupied during pevious cycle
         and not lastTrackTrainName                                    -- and it's not occupied anymore
         and nextTrackTrainName                                        -- and one of the next tracks is now occupied
-        and Block.lastTrackTrainNameOld ==  nextTrackTrainName then  -- and the trains are identical
-        printLog(1, praefix(), "Check tracks: Train "..nextTrackTrainName.." leaves block "..b)
+        and Block.lastTrackTrainNameOld ==  nextTrackTrainName then   -- and the trains are identical
+        printLog(1, praefix, "Check tracks: Train "..nextTrackTrainName.." leaves block "..b)
         leaveBlock( nextTrackTrainName, b )
       end 
      
@@ -1026,7 +1099,7 @@ local function run ()
       Block.occupiedOld = Block.occupied                        -- Set block memory old to 'free', now this 'if' statement won't run again
 
       printLog(1,
-        praefix()
+        praefix
         ,"Train '",Train.name
         ,"' releases block ",b
         ,(Block.twoWayBlock and Block.twoWayBlock > 0 and " and twin block " .. Block.twoWayBlock or "")
@@ -1054,7 +1127,7 @@ local function run ()
         --assert(Train.allowed, "Block "..b.."\nTrain "..Train.name.."\n"..debug.traceback())
 
         printLog(1,
-          praefix()
+          praefix
           ,"Train '",Train.name
           ,"' arrives in block ",b
           ,(Train.path and " on path "..table.concat(Train.path, ", ") or "")
@@ -1072,7 +1145,7 @@ local function run ()
           -- Release previous block
 
           printLog(2,
-            praefix()
+            praefix
             ,"Train '",Train.name
             ,"' releases block ",pb
             ,(previousBlock.twoWayBlock and previousBlock.twoWayBlock > 0 and " and twin block " .. previousBlock.twoWayBlock or "")
@@ -1087,11 +1160,11 @@ local function run ()
           if twoWayBlock then twoWayBlock.reserved = nil end   -- Also the two way twin block is now 'free'
 
           local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
-          printLog(2, praefix(), "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error"))
+          printLog(2, praefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error"))
 
           else
           printLog(2,
-            praefix()
+            praefix
             ,"Previous block ",pb
             ," of train '",Train.name
             ," on path ",table.concat((Train.path or {}), ", ")
@@ -1103,7 +1176,7 @@ local function run ()
           -- Release previous turnouts
 
             printLog(2,
-              praefix()
+              praefix
               ,"Search route from block ",pb," to block ",b," to release turnout"
             )
             
@@ -1111,6 +1184,7 @@ local function run ()
           for r, Route in pairs(routeTab) do                    -- (Full table scan is not very efficent but it works fine.)
             if Route[1] == pb and Route[2] == b then            -- Assumption: there exist only one route between both blocks
               turn = Route.turn
+              Route.visits = Route.visits + 1                   -- Update statistics
               break                                             -- Use the first found route between both blocks
             end
           end
@@ -1122,7 +1196,7 @@ local function run ()
               table.insert(turnouts, switch)
             end
             printLog(2,
-              praefix()
+              praefix
               ,"Train '",Train.name,"'"
               ," in block ",b
               ," releases turnouts ",table.concat(turnouts,", ")
@@ -1136,13 +1210,13 @@ local function run ()
           if #Train.path < 2 then
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
             printLog(2,
-              praefix()
+              praefix
               ,"Train '",Train.name
               ,"' finishes the path and requests a new path from block ",b
             )
           else
             printLog(2,
-              praefix()
+              praefix
               ,"Train '",Train.name
               ,"' continues travelling on path ",table.concat((Train.path or {}), ", ")
             )
@@ -1150,12 +1224,16 @@ local function run ()
 
         else -- no train path yet
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
-            --printLog(2, praefix(),"Train '",Train.name,"' requests a new path from block ",b )
+            --printLog(2, praefix,"Train '",Train.name,"' requests a new path from block ",b )
         end
 
         -- Update train data
 
         Train.block = b                                         -- Remember the location of the train...
+        
+        -- Update statistics
+        Train.visits = Train.visits + 1
+        Block.visits = Block.visits + 1
 
         if Train.allowed[b] > 1 then
           Block.stopTimer = 5 * Train.allowed[b]                -- Calculate the stop timer in seconds
@@ -1172,7 +1250,7 @@ local function run ()
     if Train and Train ~= DummyTrain then                         -- A real train...
       if Block.request and Block.stopTimer == 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
-          printLog(2, praefix(),"Train '",Train.name,"' searches a new path from block ",b )
+          printLog(2, praefix,"Train '",Train.name,"' searches a new path from block ",b )
           
           assert(b>0, "ERROR: Make list of paths: block b="..b)
           assert(type(pathTab[b])=="table", "ERROR: Make list of paths: type(pathTab["..b.."])="..type(pathTab[b]))
@@ -1221,7 +1299,7 @@ local function run ()
 
             if freePath then                                      -- Is it a free path?
               printLog(2,
-                praefix()
+                praefix
                 ,"Train '",Train.name,"'"
                 ,"has a free path from block ",b
                 ," on path ",table.concat(Path,", ")
@@ -1246,7 +1324,7 @@ local function run ()
     return -- Quit because no new path is activated
 
   elseif #availablePath > 0 then                                  -- At least one path is available
-    printLog(2, praefix(), "Count of available paths: ", #availablePath)
+    printLog(2, praefix, "Count of available paths: ", #availablePath)
 
     local nr = math.random(#availablePath)                        -- A new path is randomly selected
     local Train, b, Path = table.unpack(availablePath[nr])        -- Get the path
@@ -1258,7 +1336,7 @@ local function run ()
     end
 
     printLog(1,
-      praefix()
+      praefix
       ,"Train '",Train.name,"'"
       ," travels from block ",b
       ," on path ",table.concat(Train.path, ", ")
@@ -1280,7 +1358,7 @@ local function run ()
       if twoWayBlock then twoWayBlock.reserved = DummyTrain end -- Also reserve the two way twin block with the dummy train
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
-      printLog(2, praefix(), "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error"))
+      printLog(2, praefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error"))
 
       for r, Route in pairs(routeTab) do                          -- Search in all routes
         local fromBlock = Route[1]
@@ -1300,7 +1378,7 @@ local function run ()
 
     end
     printLog(2,
-      praefix()
+      praefix
       ,"Train '",Train.name,"'"
       ," in block ",b
       ," locks and sets turnouts ",table.concat(turnouts,", ")
