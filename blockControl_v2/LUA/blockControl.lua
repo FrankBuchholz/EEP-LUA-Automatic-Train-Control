@@ -735,7 +735,11 @@ local function findTrains ()
 
       local Train = TrainTab[trainName]                 -- Get the train
       if not Train then                                 -- Is it a new train?
-        Train = { name = trainName, allowed = {}, }     -- Create an entry for an new train (without train signal)
+        Train = {                                       -- Create an entry for an new train (without train signal)
+          name = trainName, 
+          allowed = {}, 
+          visits = 0, 
+        }
         for b, _ in pairs(BlockTab) do
           Train.allowed[b] = 1                          -- Such trains can go everywhere
         end
