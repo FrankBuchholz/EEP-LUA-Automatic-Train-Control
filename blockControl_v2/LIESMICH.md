@@ -8,7 +8,7 @@ Eine Erklärung, wie es funktioniert und wie man die Lua-Tabellen mit Daten fül
 - Englisch: [`EEP_Lua_Automatic_Train_Control_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf)
 - Deutsch: [`EEP_Lua_Automatische_Zugsteuerung_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf)
 
-Der EEP-Ordner enthält 5 funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
+Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
 
 - Demo 01: Dies ist die erste Anlage, in der gezeigt wird, wie mit Hilfe eines Lua-Skripts automatischer Zugverkehr auf jeder beliebigen Anlage des EEP (Modellbahn)-Simulators erzeugt werden kann. Der Benutzer muss keinen Code (neu) schreiben, sondern lediglich die Anlage definieren, indem er Daten über Züge, Signale und Strecken in eine Reihe von Tabellen eingibt.
 
@@ -20,6 +20,8 @@ Der EEP-Ordner enthält 5 funktionierende EEP-Demo-Layouts mit dem Lua-Code und 
 
 - Demo 05: In der fünften Anlage werfen wir einen Blick auf eine etwas ernstere Anlage mit 27 Blöcken, 43 Strecken und 7 Zügen, die alle gleichzeitig fahren!  
 Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://emaps-eep.de/lua/bettercontacts) von [Benny](https://www.eepforum.de/user/37-benny-bh2/) verwendet.
+
+- Demo Doppelkreuzungsweichen: Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
 
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 

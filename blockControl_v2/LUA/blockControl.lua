@@ -18,7 +18,7 @@ Version history:
 - Typo in printStatus corrected.
 - Show module version depending of log level during init call.
 
-2.0.3   under construction
+2.0.3   04.05 2022
 - Corrected list of allowed blocks for trains in function printData
 - Sorted lists by functions printData and printStatus
 - Show statistics of visited blocks by function printStatus
@@ -26,9 +26,16 @@ Version history:
 - Optimized detection of trains entering or leaving blocks via tracks (not finished yet)
 - Simplified prefix for print statements
 
+2.1.0   06.05.2022
+- New sub version because of new demo layout showing double slip turnouts
+- Use third parameter of functions EEPSetSignal and EEPSetSwitch always to allow users to work with EEPOn functions.
+- Try to catch stopped trains in blocks even if no enter block event was triggered
+- Improved error messages in case of incomplete data (function assert is not used anymore)
+- Show run time statistics in function printStatus
+
 --]] 
 
-local _VERSION = 'v2.0.3 from 04.05 2022'
+local _VERSION = 'v2.1.0 from 06.05.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -495,7 +502,7 @@ Options.routes            Routes via turnouts from one block to the next block
 Options.paths             Paths on which trains can go
 --]]
 
-  assert(BLKSIGRED == nil, "Module blockControl is already initialized")
+  check(BLKSIGRED == nil, "Error: Module blockControl is already initialized")
 
   if Options.logLevel then
     logLevel = Options.logLevel
@@ -519,7 +526,7 @@ Options.paths             Paths on which trains can go
   TRAINSIGGRN   = Options.TRAINSIGGRN or 2  -- GREEN state of train signals
 
 
-  EEPSetSignal( MAINSW, MAINOFF )           -- Main stop, do not allow creating any new requests
+  EEPSetSignal( MAINSW, MAINOFF, 1 )           -- Main stop, do not allow creating any new requests
 
   -- Toggle visibility of tipp texts via callback function of the main switch
   if MAINSW > 0 then
@@ -555,7 +562,7 @@ Options.paths             Paths on which trains can go
 
 
   -- Get block data (optional)
-  --check( Options.blockSignals, "ERROR in 'blockSignals': Missing block data")
+  --check( Options.blockSignals, "Error in 'blockSignals': Missing block data")
   if Options.blockSignals then 
     -- Copy block signals into local block table.
     copyBlocks( Options.blockSignals )
@@ -578,7 +585,7 @@ Options.paths             Paths on which trains can go
       if type(firstEntry) == "number" then          -- option a) or b)
         for b, twoWayBlock in pairs(Options.twoWayBlocks) do
           if twoWayBlock and twoWayBlock >= 1 then
-            check(BlockTab[twoWayBlock], "ERROR in 'twoWayBlocks': Unknown block ",twoWayBlock," in twoWayBlock["..b.."]")
+            check(BlockTab[twoWayBlock], "Error in 'twoWayBlocks': Unknown block ",twoWayBlock," in twoWayBlock["..b.."]")
           end
         end
 
@@ -586,8 +593,8 @@ Options.paths             Paths on which trains can go
         for k, relatedBlocks in pairs(Options.twoWayBlocks) do
           local b1 = relatedBlocks[1]
           local b2 = relatedBlocks[2]
-          check(b1 >= 1 and BlockTab[b1], "ERROR in 'twoWayBlocks': Unknown block ",b1," in twoWayBlocks["..k.."]")
-          check(b2 >= 1 and BlockTab[b2], "ERROR in 'twoWayBlocks': Unknown block ",b2," in twoWayBlocks["..k.."]")
+          check(b1 >= 1 and BlockTab[b1], "Error in 'twoWayBlocks': Unknown block ",b1," in twoWayBlocks["..k.."]")
+          check(b2 >= 1 and BlockTab[b2], "Error in 'twoWayBlocks': Unknown block ",b2," in twoWayBlocks["..k.."]")
         end
       end
     end 
@@ -597,14 +604,14 @@ Options.paths             Paths on which trains can go
   end
 
   -- Get additional paths (optional)
-  --check( Options.paths, "ERROR in 'paths': Missing path data")
+  --check( Options.paths, "Error in 'paths': Missing path data")
   if Options.paths then 
     -- Copy routes into local path table.
     copyPaths( Options.paths )
   end
 
   -- Get route data
-  check( Options.routes, "ERROR in 'routes': Missing route data")
+  check( Options.routes, "Error in 'routes': Missing route data")
   -- Consistency checks (only possible if blockSignals are available)
   if Options.blockSignals then 
     local fromBlocks = {}
@@ -613,20 +620,20 @@ Options.paths             Paths on which trains can go
       local b1 = Route[1]
       local b2 = Route[2]
       -- Do routes contain existing blocks only (or do we see more numbers)?
-      check( b1 >= 1 and BlockTab[b1], "ERROR in 'routes': Unknown first block ",b1," in route["..r.."]" )
-      check( b2 >= 1 and BlockTab[b2], "ERROR in 'routes': Unknown second block ",b2," in route["..r.."]" )
+      check( b1 >= 1 and BlockTab[b1], "Error in 'routes': Unknown first block ",b1," in route["..r.."]" )
+      check( b2 >= 1 and BlockTab[b2], "Error in 'routes': Unknown second block ",b2," in route["..r.."]" )
       -- Do all blocks have at least one route where this block is the first block?
       fromBlocks[b1] = true
       -- Do all blocks have at least one route where this block is the second block?
       toBlocks[b2] = true
       -- Consistency checks for Route.turn
-      check( #Route.turn % 2 == 0, "ERROR in 'routes': No pair of data in route["..r.."].turn" )
+      check( #Route.turn % 2 == 0, "Error in 'routes': No pair of data in route["..r.."].turn" )
     end
     for b, _ in pairs(BlockTab) do
       -- Do all blocks have at least one route where this block is the first block?
-      check(fromBlocks[b], "ERROR in 'routes': Block ",b," is not a starting block of any route")
+      check(fromBlocks[b], "Error in 'routes': Block ",b," is not a starting block of any route")
       -- Do all blocks have at least one route where this block is the second block?
-      check(toBlocks[b],   "ERROR in 'routes': Block ",b," is not an ending block of any route")
+      check(toBlocks[b],   "Error in 'routes': Block ",b," is not an ending block of any route")
     end
   end
   
@@ -643,7 +650,7 @@ Options.paths             Paths on which trains can go
     for p, path in pairs(paths) do
       for k, block in ipairs(path) do -- Within a path, the order of the blocks is important, therefore 'ipairs' is important here
         -- Do paths contain existing blocks only (or do we see more numbers)?
-        check( block >= 1 and BlockTab[block], "ERROR in 'paths': Unknown block ",block," in a path starting from block "..fromBlock )
+        check( block >= 1 and BlockTab[block], "Error in 'routes' / 'paths': Unknown block ",block," in a path starting from block "..fromBlock )
         -- Do all blocks have at least one path where this block is a via or an ending block?
         if k > 1  then toBlocks[block] = true end
       end
@@ -651,9 +658,9 @@ Options.paths             Paths on which trains can go
   end
   for b, _ in pairs(BlockTab) do
     -- Do all blocks have at least one route where this block is the first block?
-    check(fromBlocks[b], "ERROR in 'paths': Block ",b," is not a starting block of any path")
+    check(fromBlocks[b], "Error in 'routes' / 'paths': Block ",b," is not a starting block of any path")
     -- Do all blocks have at least one route where this block is the second block?
-    check(toBlocks[b],   "ERROR in 'paths': Block ",b," is not a via or an ending block of any path")
+    check(toBlocks[b],   "Error in 'routes' / 'paths': Block ",b," is not a via or an ending block of any path")
   end
   
   
@@ -693,14 +700,14 @@ Options.startAllTrains    Set the train signals of all trains to "green" (true) 
 
   -- Activate/deactivate main signal
   if Options.start ~= nil then
-    EEPSetSignal( MAINSW, (Options.start and MAINON or MAINOFF) )
+    EEPSetSignal( MAINSW, (Options.start and MAINON or MAINOFF), 1 )
   end
 
   -- Activate/deactivate all train signals
   if Options.startAllTrains ~= nil then
     for t, Train in pairs(TrainTab) do
       if Train.signal then
-        EEPSetSignal( Train.signal, (Options.startAllTrains and TRAINSIGGRN or TRAINSIGRED) )
+        EEPSetSignal( Train.signal, (Options.startAllTrains and TRAINSIGGRN or TRAINSIGRED), 1 )
       end
     end
   end
@@ -712,6 +719,11 @@ local DummyTrain    = { name = "#Dummy train" }   -- Dummy train which could res
 
 math.randomseed(os.time())                        -- Initialization of random generator
 local cycle = 0
+local runtime = {
+    total           = 0.0,                        -- total runtime of function run (average = total / cycle) 
+    min             = 9999.9,                     -- mimimal runtime of function run
+    max             = 0.0,                        -- maximal runtime of function run
+}
 
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -764,14 +776,16 @@ local function findTrains ()
       --Block.request     = nil
       
       -- Consistency check: Does the train has any available path?
-      local trainHasAvailablePath = false                     
-      for _, Path in pairs(pathTab[b]) do                     -- Find free paths starting at current block
-        local pathIsAvailable = true                            -- Is this an available path for this train?
-        for k=2, #Path do                                     -- Are all next blocks free?
-          local nextBlock = Path[k]							  -- Is next block allowed for the train?
-          pathIsAvailable = pathIsAvailable and Train.allowed[nextBlock] and Train.allowed[nextBlock] > 0 
+      local trainHasAvailablePath = false  
+      if pathTab[b] then 
+        for _, Path in pairs(pathTab[b]) do             -- Find free paths starting at current block
+          local pathIsAvailable = true                  -- Is this an available path for this train?
+          for k=2, #Path do                             -- Are all next blocks free?
+            local nextBlock = Path[k]							      -- Is next block allowed for the train?
+            pathIsAvailable = pathIsAvailable and Train.allowed[nextBlock] and Train.allowed[nextBlock] > 0 
+          end
+          trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
         end
-        trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
       end
       check( trainHasAvailablePath, "Error: No available path for train '"..Train.name.."' in block ",b )       
       
@@ -782,7 +796,7 @@ local function findTrains ()
   local finished = true
   local count = 0
   for trainName, Train in pairs(TrainTab) do
-    printLog(3, "C Train '",trainName,"' found in block ", (Train.block or "-"))
+    printLog(3, "Train '",trainName,"' was found in block ", (Train.block or "-"))
     if not Train.block then
       finished = false
     else
@@ -791,7 +805,7 @@ local function findTrains ()
   end
   printLog(3, "FIND MODE finished ", finished and "yes " or "no ", count)
   if finished then
-    if MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
+    if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
       printLog(1, "FIND MODE finished")
     else
@@ -889,7 +903,13 @@ local function printStatus( periodicTime )
 
   print("\n*** Status ***")
 
-  print(string.format("\nRun time: %8.0f sec", cycle / 5))
+  print(
+    string.format("\nRun time per cycle after %1.0f sec", cycle / 5),
+    --string.format("\nTotal:   %8.3f sec", runtime.total),
+    --string.format("\nMin:     %8.3f sec", runtime.min),
+    string.format("\nAverage: %8.3f sec", runtime.total / cycle),
+    string.format("\nMax:     %8.3f sec", runtime.max)
+  )
 
   print("\nTrains\n")
 
@@ -960,7 +980,11 @@ local function printStatus( periodicTime )
       text = text..", timer "..string.format("%d", math.floor(Block.stopTimer/5)).." sec"
     end
     
-    text = text..", visited trains: "..Block.visits
+    if Block.visits > 0 then
+      text = text..", visited trains: "..Block.visits
+    else
+        text = text..", not used by trains"
+    end
     
     print(text)
 
@@ -977,7 +1001,11 @@ local function printStatus( periodicTime )
     
     local text = "Route from block "..Route[1].." to "..Route[2]
     
-    text = text..", used by trains: "..Route.visits
+    if Route.visits > 0 then 
+        text = text..", used by trains: "..Route.visits
+    else
+        text = text..", not used by trains"
+    end
     
     print(text)
   
@@ -993,9 +1021,10 @@ end
 
 local function run ()
   
-  local praefix = string.format("%8.1f ", cycle / 5)  -- Praefix for print staments to show the cycle time
-
   cycle = cycle + 1                     -- EEPMain cycle number
+  local praefix = string.format("%8.1f ", cycle / 5)  -- Praefix for print staments to show the cycle time
+  
+  local t0 = os.clock()                 -- Prepare to calculate runtime
 
   if findMode then
     findTrains()                        -- Find trains and assign them to blocks
@@ -1018,17 +1047,34 @@ local function run ()
 
     local Train = Block.reserved        -- A train or a dummy train has reserved this block (could be nil, then the block is free)
 
+    if trainName and trainName ~= "" then 
+      printLog(3, praefix, string.format(
+        "Main loop: Train '%s' in block %d, occupied='%s', reserved='%s'", 
+        trainName, 
+        b,
+        Block.occupied and Block.occupied      or "NIL",
+        Block.reserved and Block.reserved.name or "NIL"
+      ))
+    end
+
     -- Constistency check: Do we already know this train?
     if trainName ~= "" then 
       if Train then 
         check(trainName == Train.name, "Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
       else
-        print("Error: Block ",b,": Train at signal '",trainName,"' but no train in block (Let's try to fix it.)" )
-        enterBlock( trainName, b )      -- Let's try to fix it
+        print("Error: Block ",b,": Train at signal '",trainName,"' but no train has reserved the block" )
       end 
     end      
 
-    if Block.stopTimer > 0 then         -- count down the block stop time
+    if trainName and trainName ~= "" and not Block.occupied then  -- A train stopped at a block but somehow the enter blocj event was not captured
+      local ok, speed = EEPGetTrainSpeed(trainName)
+      if ok  and math.abs(speed) < 1 then 
+        printLog(1, praefix, string.format("Train '%s' speed %0.2f catched in block %d but no event was triggered", trainName, speed, b))
+        enterBlock( trainName, b )                                -- Let's try to fix it
+      end
+    end
+
+    if Block.stopTimer > 0 then                                   -- count down the block stop time
       Block.stopTimer = Block.stopTimer - 1
     end
 
@@ -1256,59 +1302,61 @@ local function run ()
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
           printLog(2, praefix,"Train '",Train.name,"' searches a new path from block ",b )
           
-          assert(b>0, "ERROR: Make list of paths: block b="..b)
-          assert(type(pathTab[b])=="table", "ERROR: Make list of paths: type(pathTab["..b.."])="..type(pathTab[b]))
+          check(b>0, "Error: Make list of paths: block b="..b)
+          check(type(pathTab[b])=="table", "Error: Make list of paths: type(pathTab["..b.."])="..type(pathTab[b]))
 
           local trainHasAvailablePath = false                     -- Consistency check: Does the train has any available path?
 
-          for _, Path in pairs(pathTab[b]) do                     -- Find free paths starting at current block
-            local pathIsAvailable = true                          -- Is this an available path for this train?
-            local freePath        = true                          -- Is this a free path for this train
+          if pathTab[b] then 
+            for _, Path in pairs(pathTab[b]) do                     -- Find free paths starting at current block
+              local pathIsAvailable = true                          -- Is this an available path for this train?
+              local freePath        = true                          -- Is this a free path for this train
 
-            for k=2, #Path do                                     -- Are all next blocks free?
-              local nextBlock = Path[k]
-              
-              pathIsAvailable = pathIsAvailable and Train.allowed[nextBlock] and Train.allowed[nextBlock] > 0 -- Is next block allowed for the train?
-              
-              freePath =    freePath                              -- Is it still a free path?
-                        and pathIsAvailable                       -- Is it still an available path?
-                        and BlockTab[nextBlock].reserved == nil   -- Is next block free?
+              for k=2, #Path do                                     -- Are all next blocks free?
+                local nextBlock = Path[k]
+                
+                pathIsAvailable = pathIsAvailable and Train.allowed[nextBlock] and Train.allowed[nextBlock] > 0 -- Is next block allowed for the train?
+                
+                freePath =    freePath                              -- Is it still a free path?
+                          and pathIsAvailable                       -- Is it still an available path?
+                          and BlockTab[nextBlock].reserved == nil   -- Is next block free?
 
-              printLog(3, "nextBlock ",nextBlock," wait=",Train.allowed[nextBlock]," ",(BlockTab[nextBlock].reserved and "reserved" or "available"))
+                printLog(3, praefix, "nextBlock ",nextBlock," wait=",Train.allowed[nextBlock]," ",(BlockTab[nextBlock].reserved and "reserved" or "available"))
 
-            end
-
-            printLog(3, "Check path ",table.concat(Path, ", "), " ", (freePath and "free" or "blocked") )
-
-            for k=1, #Path-1 do                                   -- Are all turnouts free?
-              local fromBlock = Path[k]
-              local toBlock   = Path[k+1]
-              if freePath then                                    -- Is it still a free path?
-                for r, Route in pairs(routeTab) do                -- Let's check if all turnouts are free to reach the next block
-                  if freePath and Route[1] == fromBlock and Route[2] == toBlock then -- Assumption: there exist only one route between both blocks
-                    for to = 1, #Route.turn / 2 do                -- Check if the route turnouts are free
-                      local switch = Route.turn[to*2-1]
-                      freePath = freePath and not TurnReserved[ switch ]
-                      
-                      printLog(3, "From ",fromBlock," to ",toBlock," Check turnout ",switch," ",(TurnReserved[ switch ] and "free" or "locked"))
-                    end
-                    break                                         --Use the first found route between both blocks
-                  end
-                end
               end
 
-            end
+              printLog(3, praefix, "Check path ",table.concat(Path, ", "), " ", (freePath and "free" or "blocked") )
 
-            trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
+              for k=1, #Path-1 do                                   -- Are all turnouts free?
+                local fromBlock = Path[k]
+                local toBlock   = Path[k+1]
+                if freePath then                                    -- Is it still a free path?
+                  for r, Route in pairs(routeTab) do                -- Let's check if all turnouts are free to reach the next block
+                    if freePath and Route[1] == fromBlock and Route[2] == toBlock then -- Assumption: there exist only one route between both blocks
+                      for to = 1, #Route.turn / 2 do                -- Check if the route turnouts are free
+                        local switch = Route.turn[to*2-1]
+                        freePath = freePath and not TurnReserved[ switch ]
+                        
+                        printLog(3, praefix, "From ",fromBlock," to ",toBlock," Check turnout ",switch," ",(TurnReserved[ switch ] and "free" or "locked"))
+                      end
+                      break                                         --Use the first found route between both blocks
+                    end
+                  end
+                end
 
-            if freePath then                                      -- Is it a free path?
-              printLog(2,
-                praefix
-                ,"Train '",Train.name,"'"
-                ,"has a free path from block ",b
-                ," on path ",table.concat(Path,", ")
-              )
-              table.insert(availablePath, { Train, b, Path })     -- Store the tuple
+              end
+
+              trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
+
+              if freePath then                                      -- Is it a free path?
+                printLog(2,
+                  praefix
+                  ,"Train '",Train.name,"'"
+                  ,"has a free path from block ",b
+                  ," on path ",table.concat(Path,", ")
+                )
+                table.insert(availablePath, { Train, b, Path })     -- Store the tuple
+              end
             end
           end
           
@@ -1372,7 +1420,7 @@ local function run ()
             local switch = Route.turn[to*2-1]
             local pos    = Route.turn[to*2]
             TurnReserved[ switch ] = true                         -- Reserve the turnout
-            EEPSetSwitch( switch, pos )                           -- Switch the turnout
+            EEPSetSwitch( switch, pos, 1 )                        -- Switch the turnout
             table.insert(turnouts, switch)
           end
           break                                                   --Use the first found route between both blocks
@@ -1389,6 +1437,17 @@ local function run ()
     )
 
   end
+  
+  local t1 = os.clock()                                           -- Timestamp to calculate runtime
+  local tdiff = t1 - t0                                           -- Runtime of function run
+  runtime.total = runtime.total + tdiff                           -- Sum up total runtime
+  if runtime.min > tdiff then runtime.min = tdiff end 
+  if runtime.max < tdiff then runtime.max = tdiff end 
+  if tdiff > 0.1 then 
+    printLog(1, praefix, string.format("High run time: %1.3f sec", tdiff))
+  elseif tdiff > 0.01 then  
+    printLog(2, praefix, string.format("Run tiume: %1.3f sec", tdiff))
+  end  
 
   return
 end
@@ -1417,21 +1476,91 @@ In this case the order of actions does not matter (after you have executed the L
 -- Parametrisied function which you can use in Lua contacts: blockControl.enterBlock(Zugname, 25)
 enterBlock = function (trainName, b)              -- (The local variable 'enterBlock' is already defined above)
 
+  if not findMode then
+    local Train = TrainTab[trainName]             -- Get train ...
+    local path = Train.path or {}                 -- and current route of that train.
+    
+    --if b then
+    
+      -- Consistency checks
+      if path[1] and path[2] then                 -- The train has a path 
+        check(b == path[2], string.format("Train '%s' enters block %d but was expected to enter block %d", trainName, b, path[2]))
+        
+      elseif path[1] and not path[2] then         -- The stopped train was catched by a block signal earlier
+
+        if b == path[1] then
+          printLog(2, string.format("Train '%s' re-enters block %d (event is ignored)", trainName, b))
+          return                                  -- No need to enter the block again
+
+        else
+          printLog(1, string.format("Train '%s' re-enters block %d but was expected to re-enter block %d", trainName, b, path[1]))
+
+        end        
+
+      elseif not path[1] then                     -- The train does not have a path
+        print(string.format("Train '%s' enters block %d but does not follow a path", trainName, b))                                         
+        
+      end
+      
+      printLog(2, string.format("Train '%s' enters block %d", trainName, b))
+      
+    --elseif path[2] > 0 then
+    --  b = path[2]
+    --  printLog(2, string.format("Train '%s' enters block %d via unspecific enterBlock function", trainName, b))
+    --end
+  end  
+
+  printLog(3, string.format(
+    "enter block: Train '%s' enters block %d, occupied='%s', reserved='%s'", 
+    trainName, 
+    b,
+    BlockTab[b].occupied and BlockTab[b].occupied      or "NIL",
+    BlockTab[b].reserved and BlockTab[b].reserved.name or "NIL"
+  ))
+
   BlockTab[b].occupied = trainName                -- Train enters block
 
-  if not findMode then
-    printLog(2, "contact  "..string.format("Train '%s' enters block %d", trainName, b))
-  end
 end
 
 -- Parametrisied function which you can use in Lua contacts: blockControl.leaveBlock(Zugname, 25)
 leaveBlock = function (trainName, b)              -- (The local variable 'leaveBlock' is already defined above)
 
+  if not findMode then
+    local Train = TrainTab[trainName]             -- Get train ...
+    local path = Train.path or {}                 -- and current route of that train.
+    
+    --if b then
+    
+      -- Consistency checks
+      if path[1] and path[2] then                 -- The train has a path 
+        check(b == path[1], string.format("Train '%s' leaves block %d but was expected to leave block %d", trainName, b, path[1]))
+        printLog(2, string.format("Train '%s' leaves block %d", trainName, b))
+
+      elseif path[1] and not path[2] then          -- Weird situation should not happen
+        print(string.format("Train '%s' leaves block %d but has an incomplete path", trainName, b))                                         
+
+      elseif not path[1] then                      -- The train does not have a path
+        print(string.format("Train '%s' leaves block %d but does not follow a path", trainName, b))                                         
+        
+      end
+      
+    --elseif path[1] > 0 then
+    --  b = path[1]
+    --  printLog(2, string.format("Train '%s' leaves block %d via unspecific leaveBlock function", trainName, b))
+    --end
+    
+  end 
+  
+  printLog(3, string.format(
+    "leave block: Train '%s' leaves block %d, occupied='%s', reserved='%s'", 
+    trainName, 
+    b,
+    BlockTab[b].occupied and BlockTab[b].occupied      or "NIL",
+    BlockTab[b].reserved and BlockTab[b].reserved.name or "NIL"
+  ))
+
   BlockTab[b].occupied = nil                      -- Train leaves block
 
-  if not findMode then
-    printLog(2, "contact  "..string.format("Train '%s' leaves block %d", trainName, b))
-  end
 end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

@@ -8,7 +8,7 @@ An explanation on how it works and on how to fill the Lua tables with data that 
 - English: [`EEP_Lua_Automatic_Train_Control_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf)
 - German: [`EEP_Lua_Automatische_Zugsteuerung_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf)
 
-The EEP folder contains 5 working EEP demo layouts with the Lua code and the layout definition included.
+The EEP folder contains several working EEP demo layouts with the Lua code and the layout definition included.
 
 - Demo 01: This is the first layout to demonstrate how automatic train traffic can be generated on any EEP (model) railway simulator layout, using a Lua script. The user doesn't have to (re)write any code, all that is needed is to define the layout by entering data on trains, signals and routes in a set of tables.
 
@@ -20,6 +20,8 @@ The EEP folder contains 5 working EEP demo layouts with the Lua code and the lay
 
 - Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!  
 You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from [Benny](https://www.eepforum.de/user/37-benny-bh2/).
+
+- Demo Double Slip Turnouts: This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
 
 The `LUA` folder contains the `blockControl` module.
 
