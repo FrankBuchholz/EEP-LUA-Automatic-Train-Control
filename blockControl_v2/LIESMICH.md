@@ -41,6 +41,9 @@ In Demo 2 fügen wir einen zweiten Zug hinzu. Sie fahren, von Lua gesteuert, her
 Nehmen wir ein Zwei-Wege-Gleis in die Anlage auf und sehen wir uns an, wie dieses konfiguriert werden kann.
 Ein Zwei-Wege-Gleis wird als zwei separate Einbahnstraßenblöcke auf demselben Gleis behandelt. Beide Blöcke haben ihr eigenes Blocksignal und ihren eigenen Einfahrsensor. Wenn Lua einen der beiden Blöcke für einen Zug reserviert, muss auch der andere Block reserviert werden. Ebenso muss der Zwillingsblock bei Freigabe freigegeben werden. Wir müssen Lua mitteilen, welche Blöcke "Zweiweg-Zwillingsblöcke" sind, damit diese zusätzliche Reservierung und Freigabe stattfinden kann.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 04](https://www.youtube.com/watch?v=x8MSMDGuqrM&ab_channel=Rudysmodelrailway)  
+Basierend auf der Demo 3 Anlage fügen wir nun zwei Sackgassengleise im Bahnhof Nord hinzu. Zunächst werden die beiden Möglichkeiten, ein Sackgassengleis in EEP zu erstellen, erläutert. Dann wird die Lua-Konfiguration für diese Anlage Schritt für Schritt untersucht. Die Sackgassen erfordern keine spezielle Konfiguration, sie werden wie jeder andere Block behandelt.
+
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 
 Übersetzt mit www.DeepL.com/Translator

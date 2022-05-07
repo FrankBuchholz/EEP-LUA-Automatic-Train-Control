@@ -41,4 +41,7 @@ In demo 2 we add a second train. They drive around, controlled by Lua, without e
 Let's have a two way traffic track in the layout and see how this can be configured.
 A two way track is treated as two separate one way blocks on the same track. Both blocks have their own block signal and entry sensor. When Lua reserves one of the two blocks for a train, the other block has to be reserved too. Likewise, when released, the twin block also has to be released. We'll have to tell Lua which blocks are 'two way twin' blocks, such that this extra reservation and release can take place.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 04](https://www.youtube.com/watch?v=x8MSMDGuqrM&ab_channel=Rudysmodelrailway)  
+Based on the Demo 3 layout we now add two dead end tracks at station North. First both ways to make a dead end track in EEP are explained. Then the Lua configuration for this layout is examined, step by step. The dead ends don’t require any specific configuration, they are treated like any other block.
+
 Any questions, comments and ideas are welcome. In the meantime … have fun.
