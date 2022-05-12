@@ -33,9 +33,12 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
+2.1.1   12.05.2022
+- Allow reversing the direction of trains in two-way-blocks
+
 --]] 
 
-local _VERSION = 'v2.1.0 from 06.05.2022'
+local _VERSION = 'v2.1.1 from 12.05.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -1319,7 +1322,8 @@ local function run ()
                 
                 freePath =    freePath                              -- Is it still a free path?
                           and pathIsAvailable                       -- Is it still an available path?
-                          and BlockTab[nextBlock].reserved == nil   -- Is next block free?
+                          and (   BlockTab[nextBlock].reserved    == nil   -- Is next block free?
+                               or BlockTab[nextBlock].twoWayBlock == b   ) -- Or is the next block the other block of the same two-way-block?
 
                 printLog(3, praefix, "nextBlock ",nextBlock," wait=",Train.allowed[nextBlock]," ",(BlockTab[nextBlock].reserved and "reserved" or "available"))
 
