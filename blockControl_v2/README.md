@@ -44,4 +44,7 @@ A two way track is treated as two separate one way blocks on the same track. Bot
 - [Automatic Train Traffic on any EEP Layout v2 - 04](https://www.youtube.com/watch?v=x8MSMDGuqrM&ab_channel=Rudysmodelrailway)  
 Based on the Demo 3 layout we now add two dead end tracks at station North. First both ways to make a dead end track in EEP are explained. Then the Lua configuration for this layout is examined, step by step. The dead ends don’t require any specific configuration, they are treated like any other block.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 04B](https://www.youtube.com/watch?v=4VcZgUUgHy0&ab_channel=Rudysmodelrailway)  
+In the previous video on the Demo 4 layout we allowed every train on every block. This had the effect that passenger trains started to drive backwards when moving out of the dead end blocks, which is unrealistic. By simply changing the allowed blocks tables we’ll make the orange passenger train drive clockwise, the steam train drive counter-clockwise and the cargo train is the only one that drives into the dead ends. All three trains can use the middle block of station South, which is a two way block, where they will drive through if they can.
+
 Any questions, comments and ideas are welcome. In the meantime … have fun.
