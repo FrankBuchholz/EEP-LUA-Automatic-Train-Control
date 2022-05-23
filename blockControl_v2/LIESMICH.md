@@ -21,7 +21,9 @@ Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Cod
 - Demo 05: In der fünften Anlage werfen wir einen Blick auf eine etwas ernstere Anlage mit 27 Blöcken, 43 Strecken und 7 Zügen, die alle gleichzeitig fahren!  
 Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://emaps-eep.de/lua/bettercontacts) von [Benny](https://www.eepforum.de/user/37-benny-bh2/) verwendet.
 
-- Demo Doppelkreuzungsweichen: Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
+- Demo "Doppelkreuzungsweichen": Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
+
+- Demo "Zugumkehr": Diese beiden Demo-Anlagen zeigen wie man die Fahrtrichtung der Züge in Sackgassen oder in Zwei-Wege-Blöcken umkehren kann ohne dafür Kontakte zu verwenden.
 
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 

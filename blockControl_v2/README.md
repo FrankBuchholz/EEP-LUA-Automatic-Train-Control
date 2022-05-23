@@ -21,7 +21,9 @@ The EEP folder contains several working EEP demo layouts with the Lua code and t
 - Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!  
 You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from [Benny](https://www.eepforum.de/user/37-benny-bh2/).
 
-- Demo Double Slip Turnouts: This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
+- Demo "Double Slip Turnouts": This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
+
+- Demo "Train Reversal": These two demo layouts show how to reverse the direction of trains in dead ends or two-way blocks without using contacts.
 
 The `LUA` folder contains the `blockControl` module.
 
