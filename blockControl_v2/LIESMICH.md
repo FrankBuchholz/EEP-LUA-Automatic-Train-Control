@@ -46,6 +46,13 @@ Ein Zwei-Wege-Gleis wird als zwei separate Einbahnstraßenblöcke auf demselben 
 - [Automatic Train Traffic on any EEP Layout v2 - 04](https://www.youtube.com/watch?v=x8MSMDGuqrM&ab_channel=Rudysmodelrailway)  
 Basierend auf der Demo 3 Anlage fügen wir nun zwei Sackgassengleise im Bahnhof Nord hinzu. Zunächst werden die beiden Möglichkeiten, ein Sackgassengleis in EEP zu erstellen, erläutert. Dann wird die Lua-Konfiguration für diese Anlage Schritt für Schritt untersucht. Die Sackgassen erfordern keine spezielle Konfiguration, sie werden wie jeder andere Block behandelt.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 05](https://www.youtube.com/watch?v=qjrlIr_JMXY&ab_channel=Rudysmodelrailway)  
+Demo 5 ist eine etwas größere Modellbahnanlage mit 27 Blöcken und 7 Zügen. Zwei Züge fahren vom/zum Bahnhof gegen den Uhrzeigersinn, 2 Züge fahren im Uhrzeigersinn und 3 Güterzüge pendeln zwischen den 4 Gruppen von Sackgassengleisen, die Industriegebieten ähneln.  
+Über die Tabellen "Erlaubte Blöcke" legen wir fest, welche Züge wo fahren dürfen.  
+Die Zugtabelle enthält die Zugnamen, ihre Start-/Stoppschalter und die Tabelle der erlaubten Blöcke.  
+Die Streckentabelle spezifiziert jede mögliche Route von Block A nach Block B und welche Weichen zu stellen sind, um dorthin zu gelangen.  
+Wir werfen auch einen Blick auf den Abschnitt, in dem die Parameter eingestellt werden können, um die Anzahl der Meldungen auf dem Lua-Bildschirm zu ändern, ob die Tooltips angezeigt werden oder nicht, ob der Hauptschalter ein- oder ausgeschaltet ist und ob alle Zugschalter beim Starten ein- oder ausgeschaltet sind.
+
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 
 Übersetzt mit www.DeepL.com/Translator

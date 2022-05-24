@@ -33,7 +33,7 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
-2.2.0   22.05.2022
+2.2.0   24.05.2022
 - New sub-version because of new option to reverse trains at block signals
   This requires to store the speed of trains in the tag text of the engine of the trains
 - Allow reversing the direction of trains in two-way-blocks
@@ -42,7 +42,7 @@ Version history:
 
 --]] 
 
-local _VERSION = 'v2.2.0 from 22.05.2022'
+local _VERSION = 'v2.2.0 from 24.05.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -136,6 +136,13 @@ end
 
 -- Get the wagon name of the engine of a train
 local function getEngine( trainName )
+  if   not EEPGetRollingstockItemsCount -- EEP 13.2 plug-in2
+    or not EEPGetRollingstockItemName   -- EEP 13.2 plug-in2
+    or not EEPRollingstockGetMotor      -- EEP 14.2 Plug-In 2
+    then
+    return nil
+  end
+  
   -- identify the first engine
   local count = EEPGetRollingstockItemsCount( trainName )
   for i = 0, count-1, 1 do
@@ -150,22 +157,62 @@ local function getEngine( trainName )
   return wagonName
 end
 
--- Store a value or a simple key=value-table in the tag text of the engine of a train
-local function storeTrainTagText( trainName, data )
-  local wagonName = getEngine( trainName )
-  local text = serialize( data )
-  local ok = EEPRollingstockSetTagText( wagonName, text )
-  printLog(2, string.format("Store tag text in train '%s' wagon: '%s': %s", trainName, wagonName, text))
+local TrainTab = {} 
+
+-- Store a value or a simple key=value-table for the train
+local function storeTrainData( trainName, data )
+  if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
+    -- use a tag text
+    local wagonName = getEngine( trainName ) or ""
+    local text = serialize( data )
+    local ok = EEPRollingstockSetTagText( wagonName, text )
+    printLog(2, string.format("Store tag text in train '%s' wagon: '%s': %s", trainName, wagonName, text))
+
+  else 
+    -- use a data slot
+    local Train = TrainTab[ trainName ]
+    check(Train, string.format("Error while storing data: no train '%s' found", trainName))
+    check(Train.slot, string.format("Error while storing data: no slot defined for train '%s'", trainName))
+
+    local text = serialize( data )
+    local ok = EEPSaveData( Train.slot or 0, text )
+    if ok then 
+      printLog(2, string.format("Store data for train '%s' in slot %d: %s", trainName, Train.slot, text))
+    else
+      print(string.format("Storing data for train '%s' in slot %d failed: %s", trainName, Train.slot or 0
+      , text))
+    end    
+  end
 end
 
--- Retrieve a value or a simple key=value-table from the tag text of the engine of a train
-local function readTrainTagText( trainName )
-  local wagonName = getEngine( trainName )
-  local ok, text = EEPRollingstockGetTagText( wagonName )
-  printLog(2, string.format("Retrieve tag text from train '%s' wagon: '%s': %s", trainName, wagonName, text))
-  local data = deserialize( text )
-  return data
-end  
+-- Retrieve a value or a simple key=value-table from a train
+local function readTrainData( trainName )
+  if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
+    -- use a tag text
+    local wagonName = getEngine( trainName ) or ""
+    local ok, text = EEPRollingstockGetTagText( wagonName )
+    printLog(2, string.format("Retrieve tag text from train '%s' wagon: '%s': %s", trainName, wagonName, text))
+    local data = deserialize( text )
+    return data
+
+  else 
+    -- use a data slot
+    local Train = TrainTab[ trainName ]
+    check(Train, string.format("Error while reading data: no train '%s' found", trainName))
+    check(Train.slot, string.format("Error while reading data: no slot defined for train '%s'", trainName))
+
+    local ok, text = EEPLoadData( Train.slot or 0 )
+    if ok then 
+      printLog(2, string.format("Retrieve data for train '%s' from slot %d: %s", trainName, Train.slot, text))
+    else
+      print(string.format("Reading data for train '%s' from slot %d failed", trainName, Train.slot or 0))
+    end    
+    local data = deserialize( text )
+    return data
+
+  end  
+
+end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  Get the options from the caller to initialize the module
@@ -482,7 +529,7 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
   end
 end
 
-local TrainTab = {}                               -- Trains
+--local TrainTab = {}                               -- Trains (already defined above)
 local function copyTrains (Trains)                -- Copy trains with allowed blocks into local train table. (The function uses 'BlockTab').
 
   for t, Train in pairs(Trains) do
@@ -510,11 +557,22 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
       Train.signal = nil
     end
 
-    local targetSpeed = (Train.speed and math.abs(Train.speed) or nil)
+    TrainTab[trainName] = {
+      name    = trainName,
+      signal  = Train.signal,                     -- Train signal (optional)
+      allowed = Train.allowed,                    -- Allowed blocks per train
+      block   = nil,                              -- Current block where the train is
+      
+      --targetSpeed = targetSpeed,                  -- see below
+      --speed       = speed,                        -- see below
+      slot        = Train.slot,                   -- EEP versions below 14.2 cannot handle tag texts, in this case slots are used 
+      
+      visits  = 0,                                -- Statistic counter how often a train visited a block
+    }
 
     -- Get train speed to be able to reverse the direction of a train at a block signal
     local ok, speed
-    local data = readTrainTagText( trainName )
+    local data = readTrainData( trainName )
     if type(data) == "table" and data.speed then
       speed = data.speed
       printLog(3, "speed found '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
@@ -522,22 +580,15 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
       -- store current speed in the tag text of the train   
       ok, speed = EEPGetTrainSpeed( trainName )
       if speed ~= 0 then
-        storeTrainTagText( trainName, { speed = speed } )
+        storeTrainData( trainName, { speed = speed } )
       end
     end
     printLog(3, "A speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
 
-    TrainTab[trainName] = {
-      name    = trainName,
-      signal  = Train.signal,                     -- Train signal (optional)
-      allowed = Train.allowed,                    -- Allowed blocks per train
-      block   = nil,                              -- Current block where the train is
-      
-      targetSpeed = Train.speed,                  -- The target speed is used to set the speed while reversing the direction of trains
-      speed       = speed,                        -- The current speed is used to calculate the sign of the speed while reversing the direction of trains
-      
-      visits  = 0,                                -- Statistic counter how often a train visited a block
-    }
+    local targetSpeed = (Train.speed and math.abs(Train.speed) or speed)
+
+    TrainTab[trainName].targetSpeed = targetSpeed    -- The target speed is used to set the speed while reversing the direction of trains
+    TrainTab[trainName].speed       = speed          -- The current speed is used to calculate the sign of the speed while reversing the direction of trains
     
   end
 end
@@ -860,30 +911,34 @@ local function findTrains ()
       trainName = Block.occupied
     end
     if trainName ~= "" then                             -- The block knows a train
-      printLog(3, string.format("Train '%s' is located in block %d", trainName, b))
+    
+      local ok, speed = EEPGetTrainSpeed( trainName )   -- Get current speed
+
+      if speed == 0 then 
+        printLog(3, string.format("Train '%s' is located in block %d", trainName, b))
+      else
+        printLog(3, string.format("Train '%s' is running in block %d with speed %.1f km/h", trainName, b, speed))
+      end  
 
       local Train = TrainTab[trainName]                 -- Get the train
       if not Train then                                 -- Is it a new train?
-        
-        -- Get train speed to be able to reverse the direction of a train at a block signal
-        local ok, speed
-        local data = readTrainTagText( trainName )
+
+        local targetSpeed                               -- Get target speed to be able to reverse the direction of the train at a block signal
+        local data = readTrainData( trainName )
         if type(data) == "table" and data.speed then
-          speed = data.speed
-        else  
+          targetSpeed = math.abs(data.speed)
+        else
+          targetSpeed = math.abs(speed)
           -- store current speed in the tag text of the train   
-          ok, speed = EEPGetTrainSpeed( trainName )
-          if speed ~= 0 then
-            storeTrainTagText( trainName, { speed = speed } )
-          end
-        end        
+          storeTrainData( trainName, { block = b, speed = speed } )
+        end
 
         Train = {                                       -- Create an entry for an new train (without train signal)
           name = trainName, 
           allowed = {}, 
           visits = 0, 
 
-          targetSpeed = math.abs(speed),                -- The target speed is used to set speed while reversing the direction of trains
+          targetSpeed = targetSpeed,                    -- The target speed is used to set speed while reversing the direction of trains
           speed   = speed,                              -- The current speed is used to calculate the sign of the speed while reversing the direction of trains          
         }
 
@@ -892,10 +947,14 @@ local function findTrains ()
         end
         
         TrainTab[trainName] = Train
-        printLog(1, string.format("Create new train %s' in block %d", trainName, b))
+        printLog(1, string.format("Create new train %s' in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
 
       elseif not Train.block then                       -- We can assign the block to a named train.
-        printLog(1, string.format("Train '%s' found in block %d", trainName, b))
+        if Train.targetSpeed ~= 0 then 
+          printLog(1, string.format("Train '%s' found in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
+        else  
+          print(string.format("Error: Train '%s' found in block %d has no target speed", trainName, b))
+        end
 
       else
         -- Train is already known
@@ -1326,7 +1385,7 @@ local function run ()
           Train.speed = speed
           printLog(3, "B speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
         end
-        storeTrainTagText( Train.name, { block = b, speed = Train.speed })
+        storeTrainData( Train.name, { block = b, speed = Train.speed })
         
         if Train.path then
 
