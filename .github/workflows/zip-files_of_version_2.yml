@@ -31,7 +31,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Build
-      run: zip -rB ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
+      run: zip -r --binary ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
 
     - name: Upload artifact # The artifact shows up at the action log
       if: ${{ success() }}
