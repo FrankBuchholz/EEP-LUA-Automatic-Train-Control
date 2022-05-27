@@ -33,7 +33,7 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
-2.2.0   24.05.2022
+2.2.0   27.05.2022
 - New sub-version because of new option to reverse trains at block signals
   This requires to store the speed of trains in the tag text of the engine of the trains
 - Allow reversing the direction of trains in two-way-blocks
@@ -459,6 +459,7 @@ end
 
 local routeTab = {}                               -- Routes
 local TurnReserved  = {}                          -- Stores the free/reserved state for every turnout, false=free, true=reseved
+local reversingRoutesExist
 local function copyRoutes (routes)                -- Copy routes into route table and generate entries in path table
   for r, Route in pairs(routes) do
     local fromBlock = Route[1]
@@ -466,6 +467,8 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     
     collectBlock( fromBlock )                     -- Collect block numbers
     collectBlock( toBlock )
+
+    reversingRoutesExist = reversingRoutesExist or Route.reverse  -- Does there exist any reversing routes?
     
     -- Limitation: currently only one route between both blocks can be processed
     -- Simple solution: use the first found route between both blocks
@@ -950,10 +953,14 @@ local function findTrains ()
         printLog(1, string.format("Create new train %s' in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
 
       elseif not Train.block then                       -- We can assign the block to a named train.
-        if Train.targetSpeed ~= 0 then 
-          printLog(1, string.format("Train '%s' found in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
-        else  
-          print(string.format("Error: Train '%s' found in block %d has no target speed", trainName, b))
+        if reversingRoutesExist then                    -- The target speed is required to reverse trains
+          if Train.targetSpeed ~= 0 then 
+            printLog(1, string.format("Train '%s' found in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
+          else  
+            print(string.format("Error: Train '%s' found in block %d has no target speed", trainName, b))
+          end
+        else                                            -- No need to handle any target speed
+          printLog(1, string.format("Train '%s' found in block %d", trainName, b))
         end
 
       else
