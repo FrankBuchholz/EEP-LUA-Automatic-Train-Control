@@ -33,16 +33,19 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
-2.2.0   27.05.2022
+2.2.0   01.06.2022
 - New sub-version because of new option to reverse trains at block signals
   This requires to store the speed of trains in the tag text of the engine of the trains
 - Allow reversing the direction of trains in two-way-blocks
 - Two demo layouts showing reversing blocks
-- Don't show misleading message "..and stays at least for 1 sec"
+- Don't show misleading message "..and stays at least for 1 sec" if the allowed time is max 1
+- Show top into text during find mode
+- Skip functions like EEPChangeInfoSignal or EEPShowInfoTextTop if not available in this EEP version
+- The allowed tables accepts value 'true' for a drive-throught block ('nil' and 'false' are already valid values in the allowed tables.)
 
 --]] 
 
-local _VERSION = 'v2.2.0 from 24.05.2022'
+local _VERSION = 'v2.2.0 from 01.06.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -547,12 +550,15 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
         if not Train.allowed[b] then 
           Train.allowed[b] = 0                    -- Other blocks are forbidden
         end  
+        if Train.allowed[b] == true then 
+          Train.allowed[b] = .1                   -- replace true with number
+        end  
       end
       
-    else                                          -- No allowd blocks defined
+    else                                          -- No allowed blocks defined
       Train.allowed = {}
       for b, Block in pairs(BlockTab) do
-        Train.allowed[b] = 1                      -- Train can go everywhere 
+        Train.allowed[b] = .1                     -- Train can go everywhere 
       end
     end
     
@@ -903,7 +909,17 @@ local runtime = {
 
 local findMode = true
 local function findTrains ()
-  if cycle == 1 then printLog(1, "FIND MODE is active") end
+  if cycle == 1 then 
+    local text    = string.format("FIND MODE is active")
+    printLog(1, text)
+    if EEPShowInfoTextTop then
+      local r, g, b   = 1, 1, 1   -- red, green, blue
+      local size      = 1         -- Font size 0.5 .. 2
+      local duration  = 10        -- Duration in seconds, min. 5 sec.
+      local alignment = 1         -- block = 0, central = 1, left = 2, right = 3
+      local ok        = EEPShowInfoTextTop(r, g, b, size, duration, alignment, text)   
+    end
+  end
 
   -- Find trains in blocks
   for b, Block in pairs(BlockTab) do
@@ -946,7 +962,7 @@ local function findTrains ()
         }
 
         for b, _ in pairs(BlockTab) do
-          Train.allowed[b] = 1                          -- Such trains can go everywhere
+          Train.allowed[b] = .1                         -- Such trains can go everywhere
         end
         
         TrainTab[trainName] = Train
@@ -1010,9 +1026,20 @@ local function findTrains ()
     if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
       printLog(1, "FIND MODE finished")
+      if EEPHideInfoTextTop then
+        EEPHideInfoTextTop()
+      end
     else
       if cycle % 50 == 1 then               -- Do this every 10 seconds, given that EEPMain() runs 5x/s
-        printLog(1, string.format("FIND MODE has detected %d trains", count))
+        local text    = string.format("FIND MODE has detected %d trains", count)
+        printLog(1, text)
+        if EEPShowInfoTextTop then
+          local r, g, b   = 1, 1, 1   -- red, green, blue
+          local size      = 1         -- Font size 0.5 .. 2
+          local duration  = 10        -- Duration in seconds, min. 5 sec.
+          local alignment = 1         -- block = 0, central = 1, left = 2, right = 3
+          local ok        = EEPShowInfoTextTop(r, g, b, size, duration, alignment, text) 
+        end
       end
     end
   end
@@ -1023,6 +1050,7 @@ end
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 local function showSignalStatus()
+  if not EEPChangeInfoSignal then return end
 
   -- <j> linkbündig, <c> zentriert, <r> rechtsbündig, <br> Zeilenwechsel
   -- <b>Fett</b>, <i>Kursiv</i>, <fgrgb=0,0,0> Schriftfarbe, <bgrgb=0,0,0> Hintergrundfarbe
@@ -1240,7 +1268,6 @@ local function run ()
 
   showSignalStatus()                    -- Show current signal status of all block signals
 
-  local available = {}                  -- Stores available routes. Per EEPmain() cycle only one route will be randomly selected fom this table
   local availablePath = {}              -- Stores available paths. Per EEPmain() cycle only one path will be randomly selected fom this table
 
   for b, Block in pairs(BlockTab) do    -- Check all blocks for arrivals and calculate possible new routes
@@ -1261,11 +1288,15 @@ local function run ()
 
     -- Constistency check: Do we already know this train?
     if trainName ~= "" then 
-      if Train then 
-        check(trainName == Train.name, "Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
+      if Train then
+        if trainName ~= Train.name then
+          print("Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
+--enterBlock( trainName, b ) --###                               -- Let's try to fix it
+        end
       else
         print("Error: Block ",b,": Train '",trainName,"' at signal but no train has reserved the block" )
-      end 
+--enterBlock( trainName, b ) --###                               -- Let's try to fix it
+     end 
     end      
 
     if trainName and trainName ~= "" and not Block.occupied then  -- A train stopped at a block but somehow the enter block event was not captured
@@ -1536,7 +1567,7 @@ local function run ()
 
               end
 
-              printLog(3, prefix, "Check path ",table.concat(Path, ", "), " ", (freePath and "free" or "blocked") )
+              printLog(3, prefix, "Check path ",table.concat(Path, ", "), ": ", (freePath and "free" or "blocked") )
 
               for k=1, #Path-1 do                                   -- Are all turnouts free?
                 local fromBlock = Path[k]
@@ -1548,7 +1579,7 @@ local function run ()
                         local switch = Route.turn[to*2-1]
                         freePath = freePath and not TurnReserved[ switch ]
                         
-                        printLog(3, prefix, "From ",fromBlock," to ",toBlock," Check turnout ",switch," ",(TurnReserved[ switch ] and "free" or "locked"))
+                        printLog(3, prefix, "From ",fromBlock," to ",toBlock," Check turnout ",switch,": ",(TurnReserved[ switch ] and "locked" or "free"))
                       end
                       break                                         --Use the first found route between both blocks
                     end
