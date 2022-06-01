@@ -42,6 +42,7 @@ Version history:
 - Show top into text during find mode
 - Skip functions like EEPChangeInfoSignal or EEPShowInfoTextTop if not available in this EEP version
 - The allowed tables accepts value 'true' for a drive-throught block ('nil' and 'false' are already valid values in the allowed tables.)
+- Show drive time between entering a block and stopping at the block signal
 
 --]] 
 
@@ -266,6 +267,7 @@ local function collectBlock (k, s)                -- Collect new blocks into blo
       stopTimer   = 0,                            -- Waittime, decremented every EEPmain() cycle, which is 5x/s
       
       visits      = 0,                            -- Statistic counter how often a train has visited this block
+      enterBlockCycle = nil,                      -- Cycle when the entered the block to calculate the drive time until it stopps at at the signal
     }
 
     EEPSetSignal( signal, BLKSIGRED, 1 )          -- Stop all trains at block signals
@@ -1299,12 +1301,30 @@ local function run ()
      end 
     end      
 
-    if trainName and trainName ~= "" and not Block.occupied then  -- A train stopped at a block but somehow the enter block event was not captured
+    if trainName and trainName ~= "" then  
       local ok, speed = EEPGetTrainSpeed(trainName)
-      if ok  and math.abs(speed) < 1 then 
-        printLog(1, prefix, string.format("Train '%s' speed %.2f catched in block %d but no event was triggered", trainName, speed, b))
-        enterBlock( trainName, b )                                -- Let's try to fix it
-      end
+      if ok  and math.abs(speed) < 1 then                         -- A train stopped
+      
+        -- Show the drive time once
+        if Train.enterBlockCycle then
+          local driveTime = ( cycle - Train.enterBlockCycle ) / 5
+          local stopTime = math.max( Train.allowed[b] - driveTime, 0 )
+          if driveTime > 1 then
+            printLog(1, prefix, string.format("Train '%s' stops at block signal %d for at least %.0f seconds after driving for %.0f seconds", trainName, b, stopTime, driveTime))
+          end  
+          Train.enterBlockCycle = nil
+        end
+      
+        -- A train stopped at a block but somehow the enter block event was not captured
+        if not Block.occupied then  
+          printLog(1, prefix, string.format("Train '%s' speed %.2f catched in block %d but no event was triggered", trainName, speed, b))
+          enterBlock( trainName, b )                                -- Let's try to fix it
+        end
+        
+      end  
+    end
+
+    if trainName and trainName ~= "" and Train.enterBlockCycle then  -- A train stopped at a block and we want to show the drive time
     end
 
     if Block.stopTimer > 0 then                                   -- count down the block stop time
@@ -1417,6 +1437,9 @@ local function run ()
           ,(Train.allowed[b] > 1 and " and stays at least for "..Train.allowed[b].." sec" or "")
         )
 
+        -- Store current cycle to be able to calculate the drive time between entering the block and stopping at the signal
+        Train.enterBlockCycle = cycle
+        
         -- Store train speed to be able to reverse the speed at the block signal
         local ok, speed = EEPGetTrainSpeed( Train.name )
         if speed ~= 0 then -- keep known speed if train is stopped
