@@ -33,7 +33,7 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
-2.2.0   01.06.2022
+2.2.0   02.06.2022
 - New sub-version because of new option to reverse trains at block signals
   This requires to store the speed of trains in the tag text of the engine of the trains
 - Allow reversing the direction of trains in two-way-blocks
@@ -46,7 +46,7 @@ Version history:
 
 --]] 
 
-local _VERSION = 'v2.2.0 from 01.06.2022'
+local _VERSION = 'v2.2.0 from 02.06.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -164,6 +164,7 @@ end
 local TrainTab = {} 
 
 -- Store a value or a simple key=value-table for the train
+local reversingRoutesExist
 local function storeTrainData( trainName, data )
   if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
     -- use a tag text
@@ -176,15 +177,18 @@ local function storeTrainData( trainName, data )
     -- use a data slot
     local Train = TrainTab[ trainName ]
     check(Train, string.format("Error while storing data: no train '%s' found", trainName))
-    check(Train.slot, string.format("Error while storing data: no slot defined for train '%s'", trainName))
-
-    local text = serialize( data )
-    local ok = EEPSaveData( Train.slot or 0, text )
-    if ok then 
-      printLog(2, string.format("Store data for train '%s' in slot %d: %s", trainName, Train.slot, text))
-    else
-      print(string.format("Storing data for train '%s' in slot %d failed: %s", trainName, Train.slot or 0
-      , text))
+    if reversingRoutesExist and not Train.slot then 
+      print(string.format("Error while storing data: no slot defined for train '%s'", trainName))
+    end
+    if Train.slot then 
+      local text = serialize( data )
+      local ok = EEPSaveData( Train.slot or 0, text )
+      if ok then 
+        printLog(2, string.format("Store data for train '%s' in slot %d: %s", trainName, Train.slot, text))
+      else
+        print(string.format("Storing data for train '%s' in slot %d failed: %s", trainName, Train.slot or 0
+        , text))
+      end 
     end    
   end
 end
@@ -464,7 +468,6 @@ end
 
 local routeTab = {}                               -- Routes
 local TurnReserved  = {}                          -- Stores the free/reserved state for every turnout, false=free, true=reseved
-local reversingRoutesExist
 local function copyRoutes (routes)                -- Copy routes into route table and generate entries in path table
   for r, Route in pairs(routes) do
     local fromBlock = Route[1]
