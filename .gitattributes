@@ -1,0 +1,5 @@
+# https://git-scm.com/docs/gitattributes
+
+# Windows forced line-endings for Lua files
+# EEP does not allow to modify the main Lua file of a layout
+*.lua   text eol=crlf
