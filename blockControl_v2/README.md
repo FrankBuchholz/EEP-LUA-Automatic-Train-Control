@@ -23,7 +23,7 @@ You find a second variant of that layout which make use of the [BetterContacts](
 
 - Demo "Double Slip Turnouts": This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
 
-- Demo "Train Reversal": These two demo layouts show how to reverse the direction of trains in dead ends or two-way blocks without using contacts.
+- Demo "Train Reversal": Two modified demo layouts based on demo 04 and 01 show how to reverse the direction of trains in dead ends or two-way blocks without using contacts. The new demo "Baan Nico" also uses the possibility of train reversal.
 
 The `LUA` folder contains the `blockControl` module.
 

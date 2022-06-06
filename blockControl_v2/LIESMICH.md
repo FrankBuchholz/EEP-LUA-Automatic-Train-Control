@@ -23,7 +23,7 @@ Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://em
 
 - Demo "Doppelkreuzungsweichen": Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
 
-- Demo "Zugumkehr": Diese beiden Demo-Anlagen zeigen wie man die Fahrtrichtung der Züge in Sackgassen oder in Zwei-Wege-Blöcken umkehren kann ohne dafür Kontakte zu verwenden.
+- Demo "Zugumkehr": Zwei modifizierte Demo-Anlagen basierend auf Demo 04 und 01 zeigen, wie man die Fahrtrichtung der Züge in Sackgassen oder in Zwei-Wege-Blöcken umkehren kann ohne dafür Kontakte zu verwenden. Die neue Demo "Baan Nico" nutzt ebenfalls die Möglichkeit der Zugumkehr.
 
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 
