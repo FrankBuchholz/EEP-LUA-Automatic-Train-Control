@@ -53,6 +53,9 @@ Die Zugtabelle enthält die Zugnamen, ihre Start-/Stoppschalter und die Tabelle 
 Die Streckentabelle spezifiziert jede mögliche Route von Block A nach Block B und welche Weichen zu stellen sind, um dorthin zu gelangen.  
 Wir werfen auch einen Blick auf den Abschnitt, in dem die Parameter eingestellt werden können, um die Anzahl der Meldungen auf dem Lua-Bildschirm zu ändern, ob die Tooltips angezeigt werden oder nicht, ob der Hauptschalter ein- oder ausgeschaltet ist und ob alle Zugschalter beim Starten ein- oder ausgeschaltet sind.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 06](https://www.youtube.com/watch?v=xxssAIgqxk0&ab_channel=Rudyshobbychannel)  
+Der Lua-Code zur Erzeugung von automatischem Zugverkehr auf Ihrer EEP-Anlage kann mit einem Code-Generator-Tool erzeugt werden. Das Video zeigt wie.
+
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 
 Übersetzt mit www.DeepL.com/Translator

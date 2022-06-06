@@ -53,4 +53,7 @@ The trains table specifies the train names, their start/stop switches and their 
 The routes table specifies every possible route from block A to block B and which turnuts to switch to get there.  
 We also have a look at the section where the parameters can be set to change the amount of messages to show on the Lua screen, if the tooltips show or not, if the main switch is on or off and if all train switches are on or off at startup.
 
+- [Automatic Train Traffic on any EEP Layout v2 - 06](https://www.youtube.com/watch?v=xxssAIgqxk0&ab_channel=Rudyshobbychannel)  
+The Lua code to create automatic train traffic on your EEP layout can be generated with a code generator tool. The video shows how.
+
 Any questions, comments and ideas are welcome. In the meantime … have fun.
