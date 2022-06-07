@@ -21,7 +21,9 @@ The EEP folder contains several working EEP demo layouts with the Lua code and t
 - Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!  
 You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from [Benny](https://www.eepforum.de/user/37-benny-bh2/).
 
-- Demo Double Slip Turnouts: This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
+- Demo "Double Slip Turnouts": This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
+
+- Demo "Train Reversal": Two modified demo layouts based on demo 04 and 01 show how to reverse the direction of trains in dead ends or two-way blocks without using contacts. The new demo "Baan Nico" also uses the possibility of train reversal.
 
 The `LUA` folder contains the `blockControl` module.
 
@@ -46,5 +48,16 @@ Based on the Demo 3 layout we now add two dead end tracks at station North. Firs
 
 - [Automatic Train Traffic on any EEP Layout v2 - 04B](https://www.youtube.com/watch?v=4VcZgUUgHy0&ab_channel=Rudysmodelrailway)  
 In the previous video on the Demo 4 layout we allowed every train on every block. This had the effect that passenger trains started to drive backwards when moving out of the dead end blocks, which is unrealistic. By simply changing the allowed blocks tables we’ll make the orange passenger train drive clockwise, the steam train drive counter-clockwise and the cargo train is the only one that drives into the dead ends. All three trains can use the middle block of station South, which is a two way block, where they will drive through if they can.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 05](https://www.youtube.com/watch?v=qjrlIr_JMXY&ab_channel=Rudysmodelrailway)  
+Demo 5 is a somewhat larger model railway layout, with 27 blocks and 7 trains. Two trains drive from / to the station counterclockwise, 2 trains do the same clockwise, and 3 cargo trains shuttle between the 4 groups of dead end tracks that resemble industry areas.  
+Via the ‘allowed blocks’ tables we specify which trains are allowed to drive where.  
+The trains table specifies the train names, their start/stop switches and their allowed blocks table.  
+The routes table specifies every possible route from block A to block B and which turnuts to switch to get there.  
+We also have a look at the section where the parameters can be set to change the amount of messages to show on the Lua screen, if the tooltips show or not, if the main switch is on or off and if all train switches are on or off at startup.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 06](https://www.youtube.com/watch?v=xxssAIgqxk0&ab_channel=Rudyshobbychannel)  
+The Lua code to create automatic train traffic on your EEP layout can be generated with a code generator tool.
+In demo 6 we see how we can use the Lua ATC Code Generator. Based on the EEP anl3 file the Lua code for automatic train traffic is automatically generated. Included are the routes, two-way-blocks and the trains tables. What we need to adjust ourselves is the allowed blocks tables and the trains table to put specific trains on specific allowed tables. If the layout requires we may also need to add an anti-deadlock table.
 
 Any questions, comments and ideas are welcome. In the meantime … have fun.

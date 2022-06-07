@@ -21,7 +21,9 @@ Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Cod
 - Demo 05: In der fünften Anlage werfen wir einen Blick auf eine etwas ernstere Anlage mit 27 Blöcken, 43 Strecken und 7 Zügen, die alle gleichzeitig fahren!  
 Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://emaps-eep.de/lua/bettercontacts) von [Benny](https://www.eepforum.de/user/37-benny-bh2/) verwendet.
 
-- Demo Doppelkreuzungsweichen: Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
+- Demo "Doppelkreuzungsweichen": Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
+
+- Demo "Zugumkehr": Zwei modifizierte Demo-Anlagen basierend auf Demo 04 und 01 zeigen, wie man die Fahrtrichtung der Züge in Sackgassen oder in Zwei-Wege-Blöcken umkehren kann ohne dafür Kontakte zu verwenden. Die neue Demo "Baan Nico" nutzt ebenfalls die Möglichkeit der Zugumkehr.
 
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 
@@ -46,6 +48,17 @@ Basierend auf der Demo 3 Anlage fügen wir nun zwei Sackgassengleise im Bahnhof 
 
 - [Automatic Train Traffic on any EEP Layout v2 - 04B](https://www.youtube.com/watch?v=4VcZgUUgHy0&ab_channel=Rudysmodelrailway)  
 Im vorherigen Video auf der Demo 4 Anlage haben wir jeden Zug auf jedem Block zugelassen. Dies hatte den Effekt, dass Personenzüge rückwärts fuhren, wenn sie aus den Sackgassenblöcken herausfuhren, was unrealistisch ist. Durch einfaches Ändern der zulässigen Blocktabellen fahren der orangefarbene Personenzug im Uhrzeigersinn, der Dampfzug gegen den Uhrzeigersinn und der Güterzug ist der einzige, der in die Sackgassen hineinfährt. Alle drei Züge können den mittleren Block des Bahnhofs Süd benutzen, der ein Zweiwege-Block ist, durch den sie fahren, wenn sie können.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 05](https://www.youtube.com/watch?v=qjrlIr_JMXY&ab_channel=Rudysmodelrailway)  
+Demo 5 ist eine etwas größere Modellbahnanlage mit 27 Blöcken und 7 Zügen. Zwei Züge fahren vom/zum Bahnhof gegen den Uhrzeigersinn, 2 Züge fahren im Uhrzeigersinn und 3 Güterzüge pendeln zwischen den 4 Gruppen von Sackgassengleisen, die Industriegebieten ähneln.  
+Über die Tabellen "Erlaubte Blöcke" legen wir fest, welche Züge wo fahren dürfen.  
+Die Zugtabelle enthält die Zugnamen, ihre Start-/Stoppschalter und die Tabelle der erlaubten Blöcke.  
+Die Streckentabelle spezifiziert jede mögliche Route von Block A nach Block B und welche Weichen zu stellen sind, um dorthin zu gelangen.  
+Wir werfen auch einen Blick auf den Abschnitt, in dem die Parameter eingestellt werden können, um die Anzahl der Meldungen auf dem Lua-Bildschirm zu ändern, ob die Tooltips angezeigt werden oder nicht, ob der Hauptschalter ein- oder ausgeschaltet ist und ob alle Zugschalter beim Starten ein- oder ausgeschaltet sind.
+
+- [Automatic Train Traffic on any EEP Layout v2 - 06](https://www.youtube.com/watch?v=xxssAIgqxk0&ab_channel=Rudyshobbychannel)  
+Der Lua-Code zur Erzeugung von automatischem Zugverkehr auf Ihrer EEP-Anlage kann mit einem Code-Generator-Tool erzeugt werden.
+In Demo 6 sehen wir, wie wir den Lua ATC Code Generator verwenden können. Basierend auf der EEP anl3 Datei wird der Lua Code für den automatischen Zugverkehr automatisch generiert. Darin enthalten sind die Strecken, Gegenverkehrsblocks und die Zugtabellen. Was wir selbst anpassen müssen, sind die Tabellen mit den erlaubten Blöcken. Wenn es die Anlage erfordert, müssen wir eventuell auch eine Anti-Deadlock-Tabelle hinzufügen.
 
 Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
 

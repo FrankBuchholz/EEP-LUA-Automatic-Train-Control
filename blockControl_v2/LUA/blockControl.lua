@@ -27,15 +27,26 @@ Version history:
 - Simplified prefix for print statements
 
 2.1.0   06.05.2022
-- New sub version because of new demo layout showing double slip turnouts
+- New sub-version because of new demo layout showing double slip turnouts
 - Use third parameter of functions EEPSetSignal and EEPSetSwitch always to allow users to work with EEPOn functions.
 - Try to catch stopped trains in blocks even if no enter block event was triggered
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
+2.2.0   02.06.2022
+- New sub-version because of new option to reverse trains at block signals
+  This requires to store the speed of trains in the tag text of the engine of the trains
+- Allow reversing the direction of trains in two-way-blocks
+- Two demo layouts showing reversing blocks
+- Don't show misleading message "..and stays at least for 1 sec" if the allowed time is max 1
+- Show top into text during find mode
+- Skip functions like EEPChangeInfoSignal or EEPShowInfoTextTop if not available in this EEP version
+- The allowed tables accepts value 'true' for a drive-throught block ('nil' and 'false' are already valid values in the allowed tables.)
+- Show drive time between entering a block and stopping at the block signal
+
 --]] 
 
-local _VERSION = 'v2.1.0 from 06.05.2022'
+local _VERSION = 'v2.2.0 from 02.06.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -76,6 +87,139 @@ local function pairsByKeys (tab, func)              -- see http://www.lua.org/pi
     end
   end
   return iterator
+end
+
+-- Convert table to TAB separated string
+-- Limitation: no support for nested tables, no TAB in value allowed 
+local function serialize(data)
+  local t = ""
+  if type(data) == "table" then
+    -- convert table
+    local sep = string.char(09)                     -- TAB character
+    for k, v in pairs(data) do
+      local ks = tostring(k)
+      local vs = ( type(v) == "number" and math.type(v) == "float" 
+                   and string.format("%.3f", v)     -- 3 decimal places for floats are sufficent 
+                   or tostring(v) 
+                  )
+      t = t..ks.."="..vs..sep     -- simple conversion, no nested tables possible
+    end
+  else
+    -- convert anything else
+    t = tostring(data)
+  end  
+  return t
+end
+
+-- Convert TAB separated string into table
+local function deserialize(t)
+  local sep = string.char(09)                     -- TAB character
+  local pattern = "([^=]+)=([^"..sep.."]+)"..sep	-- key=value	
+  local tab = {}
+  for k, v in string.gmatch( t, pattern ) do
+    local kn, vn = tonumber(k), tonumber(v)       -- try to convert numeric values
+    tab[(kn and kn or k)] = (vn and vn or v)      -- use numeric value if possible, otherwise use string
+  end
+  if next(tab) then
+    -- construct table
+    return tab
+  else
+    -- construct anything else
+    if t == "true" then 
+      return true
+    elseif t == "false" then 
+      return false
+    elseif t == "nil" then 
+      return nil
+    else
+      local tn = tonumber(t)
+      return tn and tn or t  -- number or string
+    end  
+  end
+end
+
+-- Get the wagon name of the engine of a train
+local function getEngine( trainName )
+  if   not EEPGetRollingstockItemsCount -- EEP 13.2 plug-in2
+    or not EEPGetRollingstockItemName   -- EEP 13.2 plug-in2
+    or not EEPRollingstockGetMotor      -- EEP 14.2 Plug-In 2
+    then
+    return nil
+  end
+  
+  -- identify the first engine
+  local count = EEPGetRollingstockItemsCount( trainName )
+  for i = 0, count-1, 1 do
+    local wagonName = EEPGetRollingstockItemName( trainName, i )
+    local ok, gears = EEPRollingstockGetMotor( wagonName )
+    if ok and gears > 0 then -- Is there an engine?
+      return wagonName
+    end
+  end
+  -- fallback 
+  local wagonName = EEPGetRollingstockItemName( trainName, 1 )
+  return wagonName
+end
+
+local TrainTab = {} 
+
+-- Store a value or a simple key=value-table for the train
+local reversingRoutesExist
+local function storeTrainData( trainName, data )
+  if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
+    -- use a tag text
+    local wagonName = getEngine( trainName ) or ""
+    local text = serialize( data )
+    local ok = EEPRollingstockSetTagText( wagonName, text )
+    printLog(2, string.format("Store tag text in train '%s' wagon: '%s': %s", trainName, wagonName, text))
+
+  else 
+    -- use a data slot
+    local Train = TrainTab[ trainName ]
+    check(Train, string.format("Error while storing data: no train '%s' found", trainName))
+    if reversingRoutesExist and not Train.slot then 
+      print(string.format("Error while storing data: no slot defined for train '%s'", trainName))
+    end
+    if Train.slot then 
+      local text = serialize( data )
+      local ok = EEPSaveData( Train.slot or 0, text )
+      if ok then 
+        printLog(2, string.format("Store data for train '%s' in slot %d: %s", trainName, Train.slot, text))
+      else
+        print(string.format("Storing data for train '%s' in slot %d failed: %s", trainName, Train.slot or 0
+        , text))
+      end 
+    end    
+  end
+end
+
+-- Retrieve a value or a simple key=value-table from a train
+local function readTrainData( trainName )
+  if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
+    -- use a tag text
+    local wagonName = getEngine( trainName ) or ""
+    local ok, text = EEPRollingstockGetTagText( wagonName )
+    printLog(2, string.format("Retrieve tag text from train '%s' wagon: '%s': %s", trainName, wagonName, text))
+    local data = deserialize( text )
+    return data
+
+  else 
+    -- use a data slot
+    local Train = TrainTab[ trainName ]
+    check(Train, string.format("Error while reading data: no train '%s' found", trainName))
+    check(Train.slot, string.format("Error while reading data: no slot defined for train '%s'", trainName))
+
+    local ok, text = EEPLoadData( Train.slot or 0 )
+    if ok then 
+      printLog(2, string.format("Retrieve data for train '%s' from slot %d: %s", trainName, Train.slot, text))
+    else
+      print(string.format("Reading data for train '%s' from slot %d failed", trainName, Train.slot or 0))
+    end    
+    local data = deserialize( text )
+    return data
+
+  end  
+
 end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -127,6 +271,7 @@ local function collectBlock (k, s)                -- Collect new blocks into blo
       stopTimer   = 0,                            -- Waittime, decremented every EEPmain() cycle, which is 5x/s
       
       visits      = 0,                            -- Statistic counter how often a train has visited this block
+      enterBlockCycle = nil,                      -- Cycle when the entered the block to calculate the drive time until it stopps at at the signal
     }
 
     EEPSetSignal( signal, BLKSIGRED, 1 )          -- Stop all trains at block signals
@@ -330,6 +475,8 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     
     collectBlock( fromBlock )                     -- Collect block numbers
     collectBlock( toBlock )
+
+    reversingRoutesExist = reversingRoutesExist or Route.reverse  -- Does there exist any reversing routes?
     
     -- Limitation: currently only one route between both blocks can be processed
     -- Simple solution: use the first found route between both blocks
@@ -352,6 +499,8 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
         fromBlock, 
         toBlock, 
         turn = turn, 
+        
+        reverse = Route.reverse,                    -- Reverse direction when leaveing the from block
         
         visits = 0,                                 -- Statistic counter how often a train has used this route 
       } )
@@ -391,10 +540,12 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
   end
 end
 
-local TrainTab = {}                               -- Trains
+--local TrainTab = {}                               -- Trains (already defined above)
 local function copyTrains (Trains)                -- Copy trains with allowed blocks into local train table. (The function uses 'BlockTab').
 
   for t, Train in pairs(Trains) do
+  
+    local trainName = (string.sub(Train.name, 1, 1) == "#" and Train.name or "#"..Train.name) -- Add leading # character to align names with EEP
   
     if Train.allowed then 
       for b, waitTime in pairs(Train.allowed) do  -- Collect block numbers
@@ -404,12 +555,15 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
         if not Train.allowed[b] then 
           Train.allowed[b] = 0                    -- Other blocks are forbidden
         end  
+        if Train.allowed[b] == true then 
+          Train.allowed[b] = .1                   -- replace true with number
+        end  
       end
       
-    else
+    else                                          -- No allowed blocks defined
       Train.allowed = {}
       for b, Block in pairs(BlockTab) do
-        Train.allowed[b] = 1                       -- Train can go everywhere 
+        Train.allowed[b] = .1                     -- Train can go everywhere 
       end
     end
     
@@ -417,15 +571,38 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
       Train.signal = nil
     end
 
-    local trainName = (string.sub(Train.name, 1, 1) == "#" and Train.name or "#"..Train.name) -- Add leading # character to align names with EEP
     TrainTab[trainName] = {
       name    = trainName,
       signal  = Train.signal,                     -- Train signal (optional)
       allowed = Train.allowed,                    -- Allowed blocks per train
       block   = nil,                              -- Current block where the train is
       
+      --targetSpeed = targetSpeed,                  -- see below
+      --speed       = speed,                        -- see below
+      slot        = Train.slot,                   -- EEP versions below 14.2 cannot handle tag texts, in this case slots are used 
+      
       visits  = 0,                                -- Statistic counter how often a train visited a block
     }
+
+    -- Get train speed to be able to reverse the direction of a train at a block signal
+    local ok, speed
+    local data = readTrainData( trainName )
+    if type(data) == "table" and data.speed then
+      speed = data.speed
+      printLog(3, "speed found '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+    else  
+      -- store current speed in the tag text of the train   
+      ok, speed = EEPGetTrainSpeed( trainName )
+      if speed ~= 0 then
+        storeTrainData( trainName, { speed = speed } )
+      end
+    end
+    printLog(3, "A speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+
+    local targetSpeed = (Train.speed and math.abs(Train.speed) or speed)
+
+    TrainTab[trainName].targetSpeed = targetSpeed    -- The target speed is used to set the speed while reversing the direction of trains
+    TrainTab[trainName].speed       = speed          -- The current speed is used to calculate the sign of the speed while reversing the direction of trains
     
   end
 end
@@ -448,7 +625,10 @@ local function printData ()
     return ra[1] == rb[1] and ra[2] < rb[2] or ra[1] < rb[1] 
   end  
   for _, Route in pairsByKeys(routeTab, sortRoutes) do
-    print("From block ",Route[1]," to block ",Route[2]," via turnouts ",table.concat(Route.turn, ", "))
+    print("From block ",Route[1]," to block ",Route[2]
+      ," via turnouts ",table.concat(Route.turn, ", ")
+      ,(Route.reverse and ", reverse direction at from block" or "") -- Reverse direction when leaveing the from block
+    )
   end
 
   print("\nExpanded paths:")
@@ -470,7 +650,9 @@ local function printData ()
   
     print(
       "Train '",Train.name,"'", 
-      (Train.signal and ", Signal "..Train.signal or ""),
+      (Train.signal      and ", Signal "..Train.signal                                            or ""),
+      (Train.targetSpeed and ", target speed "..string.format("%.1f", Train.targetSpeed).." km/h" or ""),
+      (Train.speed       and ", last speed "..string.format("%.1f", Train.speed).." km/h"         or ""),       
       ", allowed blocks "..allowedBlocks
     )
   end
@@ -732,7 +914,17 @@ local runtime = {
 
 local findMode = true
 local function findTrains ()
-  if cycle == 1 then printLog(1, "FIND MODE is active") end
+  if cycle == 1 then 
+    local text    = string.format("FIND MODE is active")
+    printLog(1, text)
+    if EEPShowInfoTextTop then
+      local r, g, b   = 1, 1, 1   -- red, green, blue
+      local size      = 1         -- Font size 0.5 .. 2
+      local duration  = 10        -- Duration in seconds, min. 5 sec.
+      local alignment = 1         -- block = 0, central = 1, left = 2, right = 3
+      local ok        = EEPShowInfoTextTop(r, g, b, size, duration, alignment, text)   
+    end
+  end
 
   -- Find trains in blocks
   for b, Block in pairs(BlockTab) do
@@ -743,23 +935,54 @@ local function findTrains ()
       trainName = Block.occupied
     end
     if trainName ~= "" then                             -- The block knows a train
-      printLog(3, string.format("Train '%s' is located in block %d", trainName, b))
+    
+      local ok, speed = EEPGetTrainSpeed( trainName )   -- Get current speed
+
+      if speed == 0 then 
+        printLog(3, string.format("Train '%s' is located in block %d", trainName, b))
+      else
+        printLog(3, string.format("Train '%s' is running in block %d with speed %.1f km/h", trainName, b, speed))
+      end  
 
       local Train = TrainTab[trainName]                 -- Get the train
       if not Train then                                 -- Is it a new train?
+
+        local targetSpeed                               -- Get target speed to be able to reverse the direction of the train at a block signal
+        local data = readTrainData( trainName )
+        if type(data) == "table" and data.speed then
+          targetSpeed = math.abs(data.speed)
+        else
+          targetSpeed = math.abs(speed)
+          -- store current speed in the tag text of the train   
+          storeTrainData( trainName, { block = b, speed = speed } )
+        end
+
         Train = {                                       -- Create an entry for an new train (without train signal)
           name = trainName, 
           allowed = {}, 
           visits = 0, 
+
+          targetSpeed = targetSpeed,                    -- The target speed is used to set speed while reversing the direction of trains
+          speed   = speed,                              -- The current speed is used to calculate the sign of the speed while reversing the direction of trains          
         }
+
         for b, _ in pairs(BlockTab) do
-          Train.allowed[b] = 1                          -- Such trains can go everywhere
+          Train.allowed[b] = .1                         -- Such trains can go everywhere
         end
+        
         TrainTab[trainName] = Train
-        printLog(1, string.format("Create new train %s' in block %d", trainName, b))
+        printLog(1, string.format("Create new train %s' in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
 
       elseif not Train.block then                       -- We can assign the block to a named train.
-        printLog(1, string.format("Train '%s' found in block %d", trainName, b))
+        if reversingRoutesExist then                    -- The target speed is required to reverse trains
+          if Train.targetSpeed ~= 0 then 
+            printLog(1, string.format("Train '%s' found in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
+          else  
+            print(string.format("Error: Train '%s' found in block %d has no target speed", trainName, b))
+          end
+        else                                            -- No need to handle any target speed
+          printLog(1, string.format("Train '%s' found in block %d", trainName, b))
+        end
 
       else
         -- Train is already known
@@ -808,9 +1031,20 @@ local function findTrains ()
     if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
       printLog(1, "FIND MODE finished")
+      if EEPHideInfoTextTop then
+        EEPHideInfoTextTop()
+      end
     else
       if cycle % 50 == 1 then               -- Do this every 10 seconds, given that EEPMain() runs 5x/s
-        printLog(1, string.format("FIND MODE has detected %d trains", count))
+        local text    = string.format("FIND MODE has detected %d trains", count)
+        printLog(1, text)
+        if EEPShowInfoTextTop then
+          local r, g, b   = 1, 1, 1   -- red, green, blue
+          local size      = 1         -- Font size 0.5 .. 2
+          local duration  = 10        -- Duration in seconds, min. 5 sec.
+          local alignment = 1         -- block = 0, central = 1, left = 2, right = 3
+          local ok        = EEPShowInfoTextTop(r, g, b, size, duration, alignment, text) 
+        end
       end
     end
   end
@@ -821,6 +1055,7 @@ end
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 local function showSignalStatus()
+  if not EEPChangeInfoSignal then return end
 
   -- <j> linkbündig, <c> zentriert, <r> rechtsbündig, <br> Zeilenwechsel
   -- <b>Fett</b>, <i>Kursiv</i>, <fgrgb=0,0,0> Schriftfarbe, <bgrgb=0,0,0> Hintergrundfarbe
@@ -1022,7 +1257,7 @@ end
 local function run ()
   
   cycle = cycle + 1                     -- EEPMain cycle number
-  local praefix = string.format("%8.1f ", cycle / 5)  -- Praefix for print staments to show the cycle time
+  local prefix = string.format("%8.1f ", cycle / 5)  -- prefix for print staments to show the cycle time
   
   local t0 = os.clock()                 -- Prepare to calculate runtime
 
@@ -1038,7 +1273,6 @@ local function run ()
 
   showSignalStatus()                    -- Show current signal status of all block signals
 
-  local available = {}                  -- Stores available routes. Per EEPmain() cycle only one route will be randomly selected fom this table
   local availablePath = {}              -- Stores available paths. Per EEPmain() cycle only one path will be randomly selected fom this table
 
   for b, Block in pairs(BlockTab) do    -- Check all blocks for arrivals and calculate possible new routes
@@ -1048,7 +1282,7 @@ local function run ()
     local Train = Block.reserved        -- A train or a dummy train has reserved this block (could be nil, then the block is free)
 
     if trainName and trainName ~= "" then 
-      printLog(3, praefix, string.format(
+      printLog(3, prefix, string.format(
         "Main loop: Train '%s' in block %d, occupied='%s', reserved='%s'", 
         trainName, 
         b,
@@ -1059,19 +1293,41 @@ local function run ()
 
     -- Constistency check: Do we already know this train?
     if trainName ~= "" then 
-      if Train then 
-        check(trainName == Train.name, "Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
+      if Train then
+        if trainName ~= Train.name then
+          print("Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
+--enterBlock( trainName, b ) --###                               -- Let's try to fix it
+        end
       else
-        print("Error: Block ",b,": Train at signal '",trainName,"' but no train has reserved the block" )
-      end 
+        print("Error: Block ",b,": Train '",trainName,"' at signal but no train has reserved the block" )
+--enterBlock( trainName, b ) --###                               -- Let's try to fix it
+     end 
     end      
 
-    if trainName and trainName ~= "" and not Block.occupied then  -- A train stopped at a block but somehow the enter blocj event was not captured
+    if trainName and trainName ~= "" then  
       local ok, speed = EEPGetTrainSpeed(trainName)
-      if ok  and math.abs(speed) < 1 then 
-        printLog(1, praefix, string.format("Train '%s' speed %0.2f catched in block %d but no event was triggered", trainName, speed, b))
-        enterBlock( trainName, b )                                -- Let's try to fix it
-      end
+      if ok  and math.abs(speed) < 1 then                         -- A train stopped
+      
+        -- Show the drive time once
+        if Train.enterBlockCycle then
+          local driveTime = ( cycle - Train.enterBlockCycle ) / 5
+          local stopTime = math.max( Train.allowed[b] - driveTime, 0 )
+          if driveTime > 1 then
+            printLog(1, prefix, string.format("Train '%s' stops at block signal %d for at least %.0f seconds after driving for %.0f seconds", trainName, b, stopTime, driveTime))
+          end  
+          Train.enterBlockCycle = nil
+        end
+      
+        -- A train stopped at a block but somehow the enter block event was not captured
+        if not Block.occupied then  
+          printLog(1, prefix, string.format("Train '%s' speed %.2f catched in block %d but no event was triggered", trainName, speed, b))
+          enterBlock( trainName, b )                                -- Let's try to fix it
+        end
+        
+      end  
+    end
+
+    if trainName and trainName ~= "" and Train.enterBlockCycle then  -- A train stopped at a block and we want to show the drive time
     end
 
     if Block.stopTimer > 0 then                                   -- count down the block stop time
@@ -1107,7 +1363,7 @@ local function run ()
         and not prevTrackTrainName                                    -- and all previous tracks are now free
         and firstTrackTrainName                                       -- and the first track of the block is now occupied 
         and Block.prevTrackTrainNameOld ==  firstTrackTrainName then  -- and the trains are identical
-        printLog(1, praefix, "Check tracks: Train "..firstTrackTrainName.." enters block "..b)
+        printLog(1, prefix, "Check tracks: Train "..firstTrackTrainName.." enters block "..b)
         enterBlock( firstTrackTrainName, b )
       end  
       
@@ -1132,7 +1388,7 @@ local function run ()
         and not lastTrackTrainName                                    -- and it's not occupied anymore
         and nextTrackTrainName                                        -- and one of the next tracks is now occupied
         and Block.lastTrackTrainNameOld ==  nextTrackTrainName then   -- and the trains are identical
-        printLog(1, praefix, "Check tracks: Train "..nextTrackTrainName.." leaves block "..b)
+        printLog(1, prefix, "Check tracks: Train "..nextTrackTrainName.." leaves block "..b)
         leaveBlock( nextTrackTrainName, b )
       end 
      
@@ -1149,7 +1405,7 @@ local function run ()
       Block.occupiedOld = Block.occupied                        -- Set block memory old to 'free', now this 'if' statement won't run again
 
       printLog(1,
-        praefix
+        prefix
         ,"Train '",Train.name
         ,"' releases block ",b
         ,(Block.twoWayBlock and Block.twoWayBlock > 0 and " and twin block " .. Block.twoWayBlock or "")
@@ -1177,13 +1433,24 @@ local function run ()
         --assert(Train.allowed, "Block "..b.."\nTrain "..Train.name.."\n"..debug.traceback())
 
         printLog(1,
-          praefix
+          prefix
           ,"Train '",Train.name
           ,"' arrives in block ",b
           ,(Train.path and " on path "..table.concat(Train.path, ", ") or "")
-          ," and stays at least for ",Train.allowed[b]," sec"
+          ,(Train.allowed[b] > 1 and " and stays at least for "..Train.allowed[b].." sec" or "")
         )
 
+        -- Store current cycle to be able to calculate the drive time between entering the block and stopping at the signal
+        Train.enterBlockCycle = cycle
+        
+        -- Store train speed to be able to reverse the speed at the block signal
+        local ok, speed = EEPGetTrainSpeed( Train.name )
+        if speed ~= 0 then -- keep known speed if train is stopped
+          Train.speed = speed
+          printLog(3, "B speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+        end
+        storeTrainData( Train.name, { block = b, speed = Train.speed })
+        
         if Train.path then
 
           local pb = Train.path[1]                              -- Previous block, where the train came from
@@ -1195,7 +1462,7 @@ local function run ()
           -- Release previous block
 
           printLog(2,
-            praefix
+            prefix
             ,"Train '",Train.name
             ,"' releases block ",pb
             ,(previousBlock.twoWayBlock and previousBlock.twoWayBlock > 0 and " and twin block " .. previousBlock.twoWayBlock or "")
@@ -1210,11 +1477,11 @@ local function run ()
           if twoWayBlock then twoWayBlock.reserved = nil end   -- Also the two way twin block is now 'free'
 
           local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
-          printLog(2, praefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error"))
+          printLog(2, prefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error"))
 
           else
           printLog(2,
-            praefix
+            prefix
             ,"Previous block ",pb
             ," of train '",Train.name
             ," on path ",table.concat((Train.path or {}), ", ")
@@ -1226,7 +1493,7 @@ local function run ()
           -- Release previous turnouts
 
             printLog(2,
-              praefix
+              prefix
               ,"Search route from block ",pb," to block ",b," to release turnout"
             )
             
@@ -1246,7 +1513,7 @@ local function run ()
               table.insert(turnouts, switch)
             end
             printLog(2,
-              praefix
+              prefix
               ,"Train '",Train.name,"'"
               ," in block ",b
               ," releases turnouts ",table.concat(turnouts,", ")
@@ -1260,13 +1527,13 @@ local function run ()
           if #Train.path < 2 then
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
             printLog(2,
-              praefix
+              prefix
               ,"Train '",Train.name
               ,"' finishes the path and requests a new path from block ",b
             )
           else
             printLog(2,
-              praefix
+              prefix
               ,"Train '",Train.name
               ,"' continues travelling on path ",table.concat((Train.path or {}), ", ")
             )
@@ -1274,7 +1541,7 @@ local function run ()
 
         else -- no train path yet
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
-            --printLog(2, praefix,"Train '",Train.name,"' requests a new path from block ",b )
+            --printLog(2, prefix,"Train '",Train.name,"' requests a new path from block ",b )
         end
 
         -- Update train data
@@ -1300,7 +1567,7 @@ local function run ()
     if Train and Train ~= DummyTrain then                         -- A real train...
       if Block.request and Block.stopTimer == 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
-          printLog(2, praefix,"Train '",Train.name,"' searches a new path from block ",b )
+          printLog(2, prefix,"Train '",Train.name,"' searches a new path from block ",b )
           
           check(b>0, "Error: Make list of paths: block b="..b)
           check(type(pathTab[b])=="table", "Error: Make list of paths: type(pathTab["..b.."])="..type(pathTab[b]))
@@ -1319,13 +1586,14 @@ local function run ()
                 
                 freePath =    freePath                              -- Is it still a free path?
                           and pathIsAvailable                       -- Is it still an available path?
-                          and BlockTab[nextBlock].reserved == nil   -- Is next block free?
+                          and (   BlockTab[nextBlock].reserved    == nil   -- Is next block free?
+                               or BlockTab[nextBlock].twoWayBlock == b   ) -- Or is the next block the other block of the same two-way-block?
 
-                printLog(3, praefix, "nextBlock ",nextBlock," wait=",Train.allowed[nextBlock]," ",(BlockTab[nextBlock].reserved and "reserved" or "available"))
+                printLog(3, prefix, "nextBlock ",nextBlock," wait=",Train.allowed[nextBlock]," ",(BlockTab[nextBlock].reserved and "reserved" or "available"))
 
               end
 
-              printLog(3, praefix, "Check path ",table.concat(Path, ", "), " ", (freePath and "free" or "blocked") )
+              printLog(3, prefix, "Check path ",table.concat(Path, ", "), ": ", (freePath and "free" or "blocked") )
 
               for k=1, #Path-1 do                                   -- Are all turnouts free?
                 local fromBlock = Path[k]
@@ -1337,7 +1605,7 @@ local function run ()
                         local switch = Route.turn[to*2-1]
                         freePath = freePath and not TurnReserved[ switch ]
                         
-                        printLog(3, praefix, "From ",fromBlock," to ",toBlock," Check turnout ",switch," ",(TurnReserved[ switch ] and "free" or "locked"))
+                        printLog(3, prefix, "From ",fromBlock," to ",toBlock," Check turnout ",switch,": ",(TurnReserved[ switch ] and "locked" or "free"))
                       end
                       break                                         --Use the first found route between both blocks
                     end
@@ -1350,7 +1618,7 @@ local function run ()
 
               if freePath then                                      -- Is it a free path?
                 printLog(2,
-                  praefix
+                  prefix
                   ,"Train '",Train.name,"'"
                   ,"has a free path from block ",b
                   ," on path ",table.concat(Path,", ")
@@ -1376,7 +1644,7 @@ local function run ()
     return -- Quit because no new path is activated
 
   elseif #availablePath > 0 then                                  -- At least one path is available
-    printLog(2, praefix, "Count of available paths: ", #availablePath)
+    printLog(2, prefix, "Count of available paths: ", #availablePath)
 
     local nr = math.random(#availablePath)                        -- A new path is randomly selected
     local Train, b, Path = table.unpack(availablePath[nr])        -- Get the path
@@ -1388,7 +1656,7 @@ local function run ()
     end
 
     printLog(1,
-      praefix
+      prefix
       ,"Train '",Train.name,"'"
       ," travels from block ",b
       ," on path ",table.concat(Train.path, ", ")
@@ -1407,11 +1675,12 @@ local function run ()
       Block.reserved = Train                                      -- Reserve the block
 
       local twoWayBlock = (Block.twoWayBlock and BlockTab[ Block.twoWayBlock ] or nil)
-      if twoWayBlock then twoWayBlock.reserved = DummyTrain end -- Also reserve the two way twin block with the dummy train
+      if twoWayBlock then twoWayBlock.reserved = DummyTrain end   -- Also reserve the two way twin block with the dummy train
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
-      printLog(2, praefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error"))
+      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error"))
 
+      if k > 1 then
       for r, Route in pairs(routeTab) do                          -- Search in all routes
         local fromBlock = Route[1]
         local toBlock   = Route[2]
@@ -1423,14 +1692,42 @@ local function run ()
             EEPSetSwitch( switch, pos, 1 )                        -- Switch the turnout
             table.insert(turnouts, switch)
           end
-          break                                                   --Use the first found route between both blocks
+
+          if Route.reverse then                                   -- Does the train has to reverse its direction to start the path?
+            check(k == 2, string.format("Error during reversing train direction: Route from %d to %d is not the first part (%d) of the path %s", 
+              fromBlock, 
+              toBlock, 
+              k, 
+              table.concat(Train.path, " ")) 
+            )
+            if not Train.speed then 
+              print("Error during reversing train direction: Train '"..Train.name.."' has no stored speed")
+              local ok, speed = EEPGetTrainSpeed( Train.name )    -- Useless if the value is zero
+              check(ok, "Error during reversing train direction: could not get train speed for train '"..Train.name.."'")
+              check(speed ~= 0, "Error during reversing train direction: Train '"..Train.name.."' has stopped which leads to unknown direction")
+              Train.speed = speed
+              printLog(3, "C speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+            end
+            if not Train.targetSpeed then 
+              print("Error during reversing train direction: Train '"..Train.name.."' does not have a target speed to reverse the direction")
+              Train.targetSpeed = Train.speed
+            end
+            local newSpeed = Train.targetSpeed * (Train.speed >= 0 and -1 or 1)  -- Reverse speed
+            local ok = EEPSetTrainSpeed( Train.name, newSpeed )
+            check(ok, "Error during reversing train direction: could not set train speed for train '"..Train.name.."'")
+            printLog(2, prefix, string.format("Reverse speed of train '%s' from %.1f to %.1f km/h", Train.name, Train.speed, newSpeed ))
+          end
+
+          break                                                   -- Use the first found route between both blocks
         end
       end
       prevBlock = nextBlock                                       -- prepare to lock the next part of the path
 
     end
+    end
+
     printLog(2,
-      praefix
+      prefix
       ,"Train '",Train.name,"'"
       ," in block ",b
       ," locks and sets turnouts ",table.concat(turnouts,", ")
@@ -1444,9 +1741,9 @@ local function run ()
   if runtime.min > tdiff then runtime.min = tdiff end 
   if runtime.max < tdiff then runtime.max = tdiff end 
   if tdiff > 0.1 then 
-    printLog(1, praefix, string.format("High run time: %1.3f sec", tdiff))
+    printLog(1, prefix, string.format("High run time: %.3f sec", tdiff))
   elseif tdiff > 0.01 then  
-    printLog(2, praefix, string.format("Run tiume: %1.3f sec", tdiff))
+    printLog(2, prefix, string.format("Run tiume: %.3f sec", tdiff))
   end  
 
   return
@@ -1475,11 +1772,10 @@ In this case the order of actions does not matter (after you have executed the L
 
 -- Parametrisied function which you can use in Lua contacts: blockControl.enterBlock(Zugname, 25)
 enterBlock = function (trainName, b)              -- (The local variable 'enterBlock' is already defined above)
+  local Train = TrainTab[trainName]             -- Get train ...
+  local path = Train.path or {}                 -- and current route of that train.
 
   if not findMode then
-    local Train = TrainTab[trainName]             -- Get train ...
-    local path = Train.path or {}                 -- and current route of that train.
-    
     --if b then
     
       -- Consistency checks
@@ -1519,10 +1815,10 @@ enterBlock = function (trainName, b)              -- (The local variable 'enterB
   ))
 
   BlockTab[b].occupied = trainName                -- Train enters block
-
+  
 end
 
--- Parametrisied function which you can use in Lua contacts: blockControl.leaveBlock(Zugname, 25)
+-- Parameterized function which you can use in Lua contacts: blockControl.leaveBlock(Zugname, 25)
 leaveBlock = function (trainName, b)              -- (The local variable 'leaveBlock' is already defined above)
 
   if not findMode then
