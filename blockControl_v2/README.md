@@ -1,12 +1,16 @@
 # EEP-Lua-Automatic-Train-Control
 
-You can download version 2 of the EEP Lua Automatic Traffic Control Project here:
-[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
+## Documentation
 
-An explanation on how it works and on how to fill the Lua tables with data that define your own layout goes with it:
+You find an explanation on how it works and on how to fill the Lua tables with data that define your own layout here:
 
 - English: [`EEP_Lua_Automatic_Train_Control_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf)
 - German: [`EEP_Lua_Automatische_Zugsteuerung_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf)
+
+## Files
+
+You can download version 2 of the EEP Lua Automatic Traffic Control Project here:
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
 
 The EEP folder contains several working EEP demo layouts with the Lua code and the layout definition included.
 
@@ -27,9 +31,21 @@ You find a second variant of that layout which make use of the [BetterContacts](
 
 The `LUA` folder contains the `blockControl` module.
 
-The `GBS` folder contains 5 files with the track view consoles, which are inserted into the demo layouts as well.
-Below the start/stop signal are the train signals. These signals can also be used in automatic operation.
+The `GBS` folder contains files with the track view consoles, which are inserted into the demo layouts as well.
+Near the start/stop signal you find the train signals. These signals can also be used in automatic operation.
 The block signals as well as the switches must not be adjusted in automatic operation.
+
+## Online tools
+
+The `routes` table in the Lua configuration section describes the available routes from one block to the next by defining the ‘main’ / ‘branch’ states of the turnouts between the two blocks. This table can be created by hand but this requires great focus … one small mistake with a turnout state can cause a train to drive to an unexpected block, resulting in erratic automated traffic.
+
+Two tools come to the rescue.
+
+- As a first step, you can use the [Track Plan Program](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_Gleisplan.html). It shows the EEP track plan in your browser window, including signals and switch numbers, in an easy-to-read format.
+- A second tool goes a big step further: it can create a proposal for all Lua configuration tables except the paths table. First open the track plan in the track plan program. Now open the [Generate Program](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_blockControl.html) in another tab of the same browser and click the "Generate" button.
+- Finally, you can use the [Inventory Program](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_Inventar.html) to check the settings of the contacts including the Lua function in the contacts.
+
+## Videos
 
 A series of YouTube videos can be found here:
 
@@ -60,4 +76,13 @@ We also have a look at the section where the parameters can be set to change the
 The Lua code to create automatic train traffic on your EEP layout can be generated with a code generator tool.
 In demo 6 we see how we can use the Lua ATC Code Generator. Based on the EEP anl3 file the Lua code for automatic train traffic is automatically generated. Included are the routes, two-way-blocks and the trains tables. What we need to adjust ourselves is the allowed blocks tables and the trains table to put specific trains on specific allowed tables. If the layout requires we may also need to add an anti-deadlock table.
 
-Any questions, comments and ideas are welcome. In the meantime … have fun.
+## Collaboration
+
+Any questions, comments and ideas are welcome. You can use one of these channels:
+
+- GitHub [issues](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/issues) or [discussions](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/discussions)
+- EEP Forum thread in [English](https://www.eepforum.de/forum/thread/36688-lua-automatic-train-control-for-any-layout-version-2/) or [German](https://www.eepforum.de/forum/thread/36689-lua-automatische-zugsteuerung-f%C3%BCr-jedes-layout-version-2/)
+- EEP Forum [conversations](https://www.eepforum.de/conversation-add)  with both `RudyB` and `frank.buchholz`
+
+In the meantime … have fun.  
+Rudy and Frank

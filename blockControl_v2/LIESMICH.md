@@ -1,12 +1,16 @@
 # EEP-Lua-Automatic-Train-Control
 
-Sie können die Version 2 des EEP Lua Automatic Traffic Control Projekts hier herunterladen:
-[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
+## Dokumentation
 
-Eine Erklärung, wie es funktioniert und wie man die Lua-Tabellen mit Daten füllt, die das eigene Layout definieren, liegt bei:
+Eine Erklärung, wie es funktioniert und wie man die Lua-Tabellen mit Daten füllt, die das eigene Layout definieren, liegt hier:
 
 - Englisch: [`EEP_Lua_Automatic_Train_Control_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf)
 - Deutsch: [`EEP_Lua_Automatische_Zugsteuerung_v2.pdf`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/blob/main/blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf)
+
+## Dateien
+
+Sie können die Version 2 des EEP Lua Automatic Traffic Control Projekts hier herunterladen:
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
 
 Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
 
@@ -27,9 +31,21 @@ Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://em
 
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 
-Der `GBS`-Ordner enthält 5 Dateien mit den Gleisbildstellpulten, die auch in die Anlagen eingefügt sind.
-Unter dem Start/Stopp-Signal befinden sich die Zugsignale. Diese Signale können auch im automatischen Betrieb betätigt werden.
+Der `GBS`-Ordner enthält Dateien mit den Gleisbildstellpulten, die auch in die Anlagen eingefügt sind.
+In der Näher des Start/Stopp-Signals befinden sich die Zugsignale. Diese Signale können auch im automatischen Betrieb betätigt werden.
 Die Block-Signale sowie die Weichen dürfen im automatischen Betrieb nicht verstellt werden.
+
+## Online-Tools
+
+Die Tabelle `routes` im Lua-Konfigurationsabschnitt beschreibt die verfügbaren Strecken von einem Block zum nächsten, indem sie die Zustände "Haupt" / "Abzweig" der Weichen zwischen den beiden Blöcken definiert. Diese Tabelle kann von Hand erstellt werden, aber das erfordert große Aufmerksamkeit ... ein kleiner Fehler bei einem Weichenstatus kann dazu führen, dass ein Zug zu einem unerwarteten Block fährt, was zu unberechenbarem automatischen Verkehr führt.
+
+Folgende Online-Tools helfen hier weiter:
+
+- Als ersten Schritt können Sie das [Gleisplan-Program](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_Gleisplan.html) nutzen. Es zeigt den EEP-Gleisplan in Ihrem Browser-Fenster einschließlich der Signale und Weichennummern in einem leicht lesbaren Format.
+- Ein zweites Werkzeug geht einen großen Schritt weiter: Es kann einen Vorschlag für alle Lua-Konfigurationstabellen mit Ausnahme der Pfade-Tabelle erstellen. Öffnen Sie zunächst den Gleisplan in der Gleisplan-Programm. Öffnen Sie nun das [Generierungsprogramm](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_blockControl.html) in einer anderen Registerkarte desselben Browsers und klicken Sie auf die Schaltfläche "Generieren".
+- Schließlich können Sie das [Inventar-Programm](https://frankbuchholz.github.io/EEP_convert_anl3_file/EEP_Inventar.html) nutzen, um die Einstellungen der Kontakte einschließlich der Lua-Funktion in den Kontakten zu überprüfen.
+
+## Videos
 
 Eine Reihe von YouTube-Videos finden Sie hier:
 
@@ -60,6 +76,15 @@ Wir werfen auch einen Blick auf den Abschnitt, in dem die Parameter eingestellt 
 Der Lua-Code zur Erzeugung von automatischem Zugverkehr auf Ihrer EEP-Anlage kann mit einem Code-Generator-Tool erzeugt werden.
 In Demo 6 sehen wir, wie wir den Lua ATC Code Generator verwenden können. Basierend auf der EEP anl3 Datei wird der Lua Code für den automatischen Zugverkehr automatisch generiert. Darin enthalten sind die Strecken, Gegenverkehrsblocks und die Zugtabellen. Was wir selbst anpassen müssen, sind die Tabellen mit den erlaubten Blöcken. Wenn es die Anlage erfordert, müssen wir eventuell auch eine Anti-Deadlock-Tabelle hinzufügen.
 
-Alle Fragen, Kommentare und Ideen sind willkommen. In der Zwischenzeit ... viel Spaß.
+## Zusammenarbeit
 
-Übersetzt mit www.DeepL.com/Translator
+Alle Fragen, Kommentare und Ideen sind willkommen. Sie können einen der folgenden Kanäle verwenden:
+
+- GitHub [issues](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/issues) und [discussions](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/discussions)
+- EEP-Forum-Thread auf [Englisch](https://www.eepforum.de/forum/thread/36688-lua-automatic-train-control-for-any-layout-version-2/) oder [Deutsch](https://www.eepforum.de/forum/thread/36689-lua-automatische-zugsteuerung-f%C3%BCr-jedes-layout-version-2/)
+- EEP-Forum-[Konversationen](https://www.eepforum.de/conversation-add)  mit `_RudyB` und `frank.buchholz`
+
+In der Zwischenzeit ... viel Spaß.  
+Rudy und Frank
+
+_Übersetzt mit www.DeepL.com/Translator_
