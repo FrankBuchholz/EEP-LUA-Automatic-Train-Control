@@ -1,3 +1,16 @@
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+-- Ruud Boer, June 2022
+-- EEP Lua code to automatically drive trains from block to block.
+-- The user only has to define the layout by configuring some tables and variables
+-- There's no need to write any Lua code, the code uses the data in the tables and variables.
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+-- Configuration for model railroad layout "Baan Nico"
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+-- Main signal to start automatic block control
+-- (You can toggle the signal twice to show/hide tipp texts)
 local main_signal = 65
 
 -- Allowed blocks and wait times
@@ -242,15 +255,4 @@ end
 function EEPMain()
   blockControl.run()
   return 1
-end	
-[EEPLuaData]
-DS_1 = "block=55	speed=30.060	"
-DS_2 = "block=76	speed=50.023	"
-DS_3 = "block=83	speed=-39.977	"
-DS_4 = "block=60	speed=-39.987	"
-DS_5 = "block=71	speed=39.751	"
-DS_6 = "block=108	speed=-40.001	"
-DS_7 = "block=61	speed=-50.024	"
-DS_8 = "block=80	speed=36.348	"
-DS_9 = "block=101	speed=-50.004	"
-DS_10 = "block=74	speed=60.037	"
+end
