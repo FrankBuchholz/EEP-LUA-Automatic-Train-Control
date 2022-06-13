@@ -76,6 +76,15 @@ We also have a look at the section where the parameters can be set to change the
 The Lua code to create automatic train traffic on your EEP layout can be generated with a code generator tool.
 In demo 6 we see how we can use the Lua ATC Code Generator. Based on the EEP anl3 file the Lua code for automatic train traffic is automatically generated. Included are the routes, two-way-blocks and the trains tables. What we need to adjust ourselves is the allowed blocks tables and the trains table to put specific trains on specific allowed tables. If the layout requires we may also need to add an anti-deadlock table.
 
+- [Automatic Train Traffic on any EEP Layout v2.2 - 07](https://www.youtube.com/watch?v=Jy6LAwftW9g&ab_channel=Rudyshobbychannel)  
+Automatic Train Control on any EEP Layout with Lua - v2.2 - 7
+EEP Lua ATC version 2.2 has been released. This video shows all the steps, from downloading up to having three trains driving around fully automatic.  
+One of the new features in v2.2 is the way trains can be reversed. There’s no need for speed reverse sensors anymore, which also eliminates the need for careful sensor placement, and the always still visible speed reversal hiccup is history. Lua takes care of the reversal once a route has been given the additional specification reverse=true. This reversal method also makes it possible to reverse trains on a block that is not a dead end.
+
+- [Automatic Train Traffic on any EEP Layout v2.2 - 08](https://www.youtube.com/watch?v=YdrGc5KIsmM&ab_channel=Rudyshobbychannel)  
+Automatic Train Control version 2.2 has the feature of being able to reverse trains without using any track sensors, Lua takes care of the reversal. This makes it possible to reverse a train on any block, not only on dead ends. The block need not even be a two-way block, trains can reverse on any block.  
+The Lua ATC Code Generator can not guess our intentions, it will always generate routes without reversals, and reverse trains only in dead ends. When we want a train to reverse on a non dead end block we’ll have to add the routes for this ourselves and specify reverse=true for those routes. If you leave both the forward and the reversal route in the table, the result will be that trains will drive on 50% of the time and reverse the other 50% of the times.
+
 ## Collaboration
 
 Any questions, comments and ideas are welcome. You can use one of these channels:

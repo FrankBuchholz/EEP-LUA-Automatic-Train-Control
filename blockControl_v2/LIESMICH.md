@@ -76,6 +76,14 @@ Wir werfen auch einen Blick auf den Abschnitt, in dem die Parameter eingestellt 
 Der Lua-Code zur Erzeugung von automatischem Zugverkehr auf Ihrer EEP-Anlage kann mit einem Code-Generator-Tool erzeugt werden.
 In Demo 6 sehen wir, wie wir den Lua ATC Code Generator verwenden können. Basierend auf der EEP anl3 Datei wird der Lua Code für den automatischen Zugverkehr automatisch generiert. Darin enthalten sind die Strecken, Gegenverkehrsblocks und die Zugtabellen. Was wir selbst anpassen müssen, sind die Tabellen mit den erlaubten Blöcken. Wenn es die Anlage erfordert, müssen wir eventuell auch eine Anti-Deadlock-Tabelle hinzufügen.
 
+- [Automatic Train Traffic on any EEP Layout v2.2 - 07](https://www.youtube.com/watch?v=Jy6LAwftW9g&ab_channel=Rudyshobbychannel)  
+EEP Lua ATC Version 2.2 wurde veröffentlicht. Dieses Video zeigt alle Schritte, vom Herunterladen bis zum vollautomatischen Fahren von drei Zügen.  
+Eine der neuen Funktionen in v2.2 ist die Art und Weise, wie Züge umgedreht werden können. Es werden keine Sensoren für die Geschwindigkeitsumkehr mehr benötigt, was auch die Notwendigkeit einer sorgfältigen Platzierung und den immer noch sichtbaren Schluckauf bei der Geschwindigkeitsumkehr eliminiert. Lua kümmert sich um die Umkehrung, sobald eine Strecke die zusätzliche Angabe reverse=true erhalten hat. Mit dieser Umkehrmethode ist es auch möglich, Züge in einem Block umzukehren, der keine Sackgasse ist.
+
+- [Automatic Train Traffic on any EEP Layout v2.2 - 08](https://www.youtube.com/watch?v=YdrGc5KIsmM&ab_channel=Rudyshobbychannel)  
+Die automatische Zugsteuerung Version 2.2 bietet die Möglichkeit, Züge ohne Gleissensoren umzukehren, Lua übernimmt die Umkehrung. Das macht es möglich, einen Zug an jedem Block umzukehren, nicht nur an Sackgassen. Der Block muss nicht einmal ein Zweiwege-Block sein, Züge können an jedem Block umkehren.  
+Der Lua ATC Code Generator kann unsere Absichten nicht erraten, er wird immer Strecken ohne Umkehrungen generieren, und Züge nur in Sackgassen umkehren lassen. Wenn wir wollen, dass ein Zug in einem Block, der keine Sackgasse ist, rückwärts fährt, müssen wir die Routen dafür selbst hinzufügen und reverse=true für diese Routen angeben. Wenn Sie sowohl die Vorwärts- als auch die Rückwärtsroute in der Tabelle belassen, führt dies dazu, dass die Züge 50 % der Zeit vorwärts fahren und die anderen 50 % der Zeit rückwärts.
+
 ## Zusammenarbeit
 
 Alle Fragen, Kommentare und Ideen sind willkommen. Sie können einen der folgenden Kanäle verwenden:
