@@ -34,7 +34,7 @@ jobs:
       run: |
         cd blockControl_v2/LUA/
         curl -O -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua
-        sed $'s/$/\r/' BetterContacts_BH2.lua
+        sed -i $'s/$/\r/' BetterContacts_BH2.lua
         unix2dos BetterContacts_BH2.lua
              
     - name: Build zip file
