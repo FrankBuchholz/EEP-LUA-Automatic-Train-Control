@@ -32,8 +32,9 @@ jobs:
 
     - name: Get latest version of BetterContacts
       run: >
-        curl -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua -o blockControl_v2/LUA/BetterContacts_BH2.lua
-
+        curl -o blockControl_v2/LUA/BetterContacts_BH2.lua
+             -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua
+             
     - name: Build zip file
       run: >
         zip -r ./blockControl_v2/EEP_blockControl.zip 
