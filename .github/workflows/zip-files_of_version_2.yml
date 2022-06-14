@@ -36,13 +36,8 @@ jobs:
         curl -O -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua
              
     - name: Build zip file
-      run: >
-        zip -r ./blockControl_v2/EEP_blockControl.zip 
-          blockControl_v2/EEP_blockControl/ 
-          blockControl_v2/LUA/ 
-          blockControl_v2/GBS/ 
-          blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf 
-          blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
+      run: |
+        zip -r ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/EEP_LUA_Automatic_Train_Control_v2.pdf blockControl_v2/EEP_LUA_Automatische_Zugsteuerung_v2.pdf
 
     - name: Upload artifact # The artifact shows up at the action log
       if: ${{ success() }}
