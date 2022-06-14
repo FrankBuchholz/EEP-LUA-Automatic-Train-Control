@@ -31,9 +31,9 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Get latest version of BetterContacts
-      run: >
-        curl -o blockControl_v2/LUA/BetterContacts_BH2.lua
-             -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua
+      run: |
+        cd blockControl_v2/LUA/
+        curl -O -L https://raw.githubusercontent.com/EEP-Benny/BetterContacts/master/BetterContacts_BH2.lua
              
     - name: Build zip file
       run: >
