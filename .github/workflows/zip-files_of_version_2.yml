@@ -6,7 +6,9 @@ name: Archive files for version 2
 on:
   # Triggers the workflow on push request events but only for the main branch and only if specific files have been changed
   push:
-    branches: [ test_zip ]
+    branches: 
+      - main
+      - test_zip
     paths: 
       - blockControl_v2/**
 
