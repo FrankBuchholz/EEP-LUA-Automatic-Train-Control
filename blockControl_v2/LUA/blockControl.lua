@@ -33,7 +33,7 @@ Version history:
 - Improved error messages in case of incomplete data (function assert is not used anymore)
 - Show run time statistics in function printStatus
 
-2.2.0   02.06.2022
+2.2.0   05.06.2022
 - New sub-version because of new option to reverse trains at block signals
   This requires to store the speed of trains in the tag text of the engine of the trains
 - Allow reversing the direction of trains in two-way-blocks
@@ -44,9 +44,13 @@ Version history:
 - The allowed tables accepts value 'true' for a drive-throught block ('nil' and 'false' are already valid values in the allowed tables.)
 - Show drive time between entering a block and stopping at the block signal
 
+2.3.0 21.06.2022
+- New sub-version because of new EEP installer and rearranged documentation
+- Minor fixes
+
 --]] 
 
-local _VERSION = 'v2.2.0 from 02.06.2022'
+local _VERSION = 'v2.3.0 from 21.06.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -917,7 +921,10 @@ local function findTrains ()
   if cycle == 1 then 
     local text    = string.format("FIND MODE is active")
     printLog(1, text)
+  end  
+  if cycle <= 7 then -- I've no idea why it is neccessary to wait for at least 7 cycles after loading a layout
     if EEPShowInfoTextTop then
+      local text      = string.format("FIND MODE is active")
       local r, g, b   = 1, 1, 1   -- red, green, blue
       local size      = 1         -- Font size 0.5 .. 2
       local duration  = 10        -- Duration in seconds, min. 5 sec.
@@ -1327,7 +1334,8 @@ local function run ()
       end  
     end
 
-    if trainName and trainName ~= "" and Train.enterBlockCycle then  -- A train stopped at a block and we want to show the drive time
+    if trainName and trainName ~= "" and Train and Train.enterBlockCycle then  -- A train stopped at a block and we want to show the drive time
+      -- ...
     end
 
     if Block.stopTimer > 0 then                                   -- count down the block stop time
@@ -1743,7 +1751,7 @@ local function run ()
   if tdiff > 0.1 then 
     printLog(1, prefix, string.format("High run time: %.3f sec", tdiff))
   elseif tdiff > 0.01 then  
-    printLog(2, prefix, string.format("Run tiume: %.3f sec", tdiff))
+    printLog(2, prefix, string.format("Run time: %.3f sec", tdiff))
   end  
 
   return

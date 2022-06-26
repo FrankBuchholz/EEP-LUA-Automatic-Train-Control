@@ -1,6 +1,10 @@
 # https://git-scm.com/docs/gitattributes
 
-# Windows forced line-endings for Lua files
-# EEP does not allow to modify the main Lua file of a layout
-*.lua   text eol=crlf
-*.gbs   text eol=crlf
+# EEP does not allow to modify the main Lua file of a layout externally
+# Therefore git should not touch EEP text files
+# Option 1 - Force using Windows line-endings: text eol=crlf
+# Option 2 - Do not interpret EEP files as text files: -text
+*.lua   -text
+*.gbs   -text
+*.eep   -text
+*.ini   -text
