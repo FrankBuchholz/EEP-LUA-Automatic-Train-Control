@@ -14,21 +14,6 @@ You can download version 2 of the EEP Lua Automatic Traffic Control Project here
 
 The EEP folder contains several working EEP demo layouts with the Lua code and the layout definition included.
 
-- Demo 01: This is the first layout to demonstrate how automatic train traffic can be generated on any EEP (model) railway simulator layout, using a Lua script. The user doesn't have to (re)write any code, all that is needed is to define the layout by entering data on trains, signals and routes in a set of tables.
-
-- Demo 02: In the second layout we use four blocks and add a second train.
-
-- Demo 03: In the third layout we use a two way block and see how to configure it in the Lua data.
-
-- Demo 04: In the fourth layout we use two dead end tracks and see how we an make trains reverse there. We'll also run a third train, configure the layout in Lua and drive three trains around without collisions.
-
-- Demo 05: In the fifth layout we have a look at a somewhat more serious layout with 27 blocks, 43 routes and 7 trains, all driving simultaneously!  
-You find a second variant of that layout which make use of the [BetterContacts](https://emaps-eep.de/lua/bettercontacts) module from [Benny](https://www.eepforum.de/user/37-benny-bh2/).
-
-- Demo "Double Slip Turnouts": This demo layout shows both flavors of a DST, a 4-turnout-DST at the top and a track object DST at the bottom.
-
-- Demo "Train Reversal": Two modified demo layouts based on demo 04 and 01 show how to reverse the direction of trains in dead ends or two-way blocks without using contacts. The new demo "Baan Nico" also uses the possibility of train reversal.
-
 The `LUA` folder contains the `blockControl` module.
 
 The `GBS` folder contains files with the track view consoles, which are inserted into the demo layouts as well.

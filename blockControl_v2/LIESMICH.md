@@ -14,21 +14,6 @@ Sie können die Version 2 des EEP Lua Automatic Traffic Control Projekts hier he
 
 Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
 
-- Demo 01: Dies ist die erste Anlage, in der gezeigt wird, wie mit Hilfe eines Lua-Skripts automatischer Zugverkehr auf jeder beliebigen Anlage des EEP (Modellbahn)-Simulators erzeugt werden kann. Der Benutzer muss keinen Code (neu) schreiben, sondern lediglich die Anlage definieren, indem er Daten über Züge, Signale und Strecken in eine Reihe von Tabellen eingibt.
-
-- Demo 02: In der zweiten Anlage verwenden wir vier Blöcke und fügen einen zweiten Zug hinzu.
-
-- Demo 03: In der dritten Anlage fügen wir einen Zwei-Wege-Block hinzu und sehen, wie man ihn in den Lua-Daten konfiguriert.
-
-- Demo 04: In der vierten Anlage fügen wir zwei Sackgassengleise hinzu und sehen, wie wir Züge dort umkehren lassen können. Außerdem fügen wir einen dritten Zug hinzu, konfigurieren die Anlage in Lua und fahren mit drei Zügen ohne Kollisionen herum.
-
-- Demo 05: In der fünften Anlage werfen wir einen Blick auf eine etwas ernstere Anlage mit 27 Blöcken, 43 Strecken und 7 Zügen, die alle gleichzeitig fahren!  
-Zu dieser Anlage gibt es eine Variante die das Modul [BetterContacts](https://emaps-eep.de/lua/bettercontacts) von [Benny](https://www.eepforum.de/user/37-benny-bh2/) verwendet.
-
-- Demo "Doppelkreuzungsweichen": Diese Demo-Anlage zeigt beide Varianten einer DKW, eine 4-Weichen-DKW oben und eine Gleisobjekt-DKW unten.
-
-- Demo "Zugumkehr": Zwei modifizierte Demo-Anlagen basierend auf Demo 04 und 01 zeigen, wie man die Fahrtrichtung der Züge in Sackgassen oder in Zwei-Wege-Blöcken umkehren kann ohne dafür Kontakte zu verwenden. Die neue Demo "Baan Nico" nutzt ebenfalls die Möglichkeit der Zugumkehr.
-
 Der `LUA`-Ordner enthält das `blockControl` Modul.
 
 Der `GBS`-Ordner enthält Dateien mit den Gleisbildstellpulten, die auch in die Anlagen eingefügt sind.
