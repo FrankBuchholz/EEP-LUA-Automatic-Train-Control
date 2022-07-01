@@ -83,7 +83,9 @@ local blockControl = require("blockControl")   -- Load the module
 blockControl.init({                            -- Initialize the module
   logLevel        = 1,              -- (Optional) Log level 0 (default): off, 1: normal, 2: full, 3: extreme
 
-  trains          = trains,         -- (Optional) Unknows trais get detected automatically, however, such trains do not have a train signal and can go everywhere.
+--translation     = "ENG",          -- (optional) GER: German, ENG: English, FRA: French; by default the installed language of EEP is used   
+
+  trains          = trains,         -- (Optional) Unknows trains get detected automatically, however, such trains do not have a train signal and can go everywhere.
   
   blockSignals    = block_signals,  -- Block signals
   twoWayBlocks    = two_way_blocks, -- Two way twin blocks (array or set of related blocks)
@@ -105,6 +107,7 @@ blockControl.init({                            -- Initialize the module
 -- [[ (Optional) Set one or more runtime parameters at any time 
 blockControl.set({
   logLevel        = 1,              -- (Optional) Log level 0 (default): off, 1: normal, 2: full, 3: extreme
+--translation     = "ENG",          -- (optional) GER: German, ENG: English, FRA: French; by default the installed language of EEP is used 
   showTippText    = true,           -- (Optional) Show tipp texts true / false (Later you can toggle the visibility of the tipp texts using the main switch.)
   start           = false,          -- (Optional) Activate/deactivate main signal. Useful to start automatic block control after finding all known train.
   startAllTrains  = true,           -- (Optional) Activate/deactivate all train signals

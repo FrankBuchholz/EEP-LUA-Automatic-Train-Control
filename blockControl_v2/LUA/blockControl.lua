@@ -44,13 +44,16 @@ Version history:
 - The allowed tables accepts value 'true' for a drive-throught block ('nil' and 'false' are already valid values in the allowed tables.)
 - Show drive time between entering a block and stopping at the block signal
 
-2.3.0 21.06.2022
+2.3.0   21.06.2022
 - New sub-version because of new EEP installer and rearranged documentation
 - Minor fixes
 
+2.3.1   30.06.2022
+- Translated texts (GER, ENG, FRA)
+
 --]] 
 
-local _VERSION = 'v2.3.0 from 21.06.2022'
+local _VERSION = 'v2.3.1 - 30.06.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -59,6 +62,52 @@ local _VERSION = 'v2.3.0 from 21.06.2022'
 -- Variables starting with an upper case letter are objects.
 -- Variables starting with a lower letter are primitive data types or arrays.
 -- Variables which are all upper case are constants.
+
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+-- @@@  Language functions
+-- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+local language = "ENG"
+if EEPLng then       -- Variable EEPLng showing the installed language version of EEP is available as of EEP 17 only
+  language = EEPLng
+else
+
+  -- Read file eep.lng to identify the installed language
+  local filename = "eep.lng"
+  local file = io.open(filename, "r") 
+  if file then
+    --local section
+    for line in io.lines(filename) do
+      -- Read section
+      --local s = line:match("^%[([^%]]+)%]$")
+      --if s then section = s end
+      
+      -- Read Entry
+      --local key, value = line:match("^(%w+)%s-=%s-(.+)$")
+      
+      -- Read specific entry
+      --local value = line:match("^IDC_BUTTON_EXIT%s-=%s-\"(.+)\"")   -- Ende    Exit  Quitter (at the end of the file)
+      local value = line:match("^IDC_BUT_CLOSE%s-=%s-\"(.+)\"")       -- Beenden Close Fermer  (at the beginning of the file)
+      if value then
+        if     value == "Beenden" then language = "GER"
+        elseif value == "Close"   then language = "ENG"
+        elseif value == "Fermer"  then language = "FRA"
+        end
+        break
+      end
+    end
+    file:close()
+  end
+  
+end
+
+local function stringFormat( text, ... )
+  if type(text) == "table" then
+    return string.format( text[language], ... )     -- Use language specific text
+  else
+    return string.format( text, ... )               -- Use given text
+  end  
+end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  Utility functions
@@ -175,23 +224,54 @@ local function storeTrainData( trainName, data )
     local wagonName = getEngine( trainName ) or ""
     local text = serialize( data )
     local ok = EEPRollingstockSetTagText( wagonName, text )
-    printLog(2, string.format("Store tag text in train '%s' wagon: '%s': %s", trainName, wagonName, text))
+    printLog(2, stringFormat({
+        GER = "Tag-Text in Zug '%s' Waggon '%s' speichern: %s", 
+        ENG = "Store tag text in train '%s' wagon '%s': %s", 
+        FRA = "Enregistrer le texte de la balise dans le train '%s' wagon '%s' : %s", 
+      }, trainName, wagonName, text )
+    )
 
   else 
     -- use a data slot
     local Train = TrainTab[ trainName ]
-    check(Train, string.format("Error while storing data: no train '%s' found", trainName))
+    
+    check(Train, stringFormat({
+        GER = "Fehler beim Speichern von Daten: Zug '%s' nicht gefunden", 
+        ENG = "Error while storing data: train '%s' not found", 
+        FRA = "Erreur lors du stockage des données: train '%s' non trouvé", 
+      }, trainName )
+    )
+    
     if reversingRoutesExist and not Train.slot then 
-      print(string.format("Error while storing data: no slot defined for train '%s'", trainName))
+    
+      print(stringFormat({
+          GER = "Fehler beim Speichern von Daten: kein Slot für den Zug '%s' definiert", 
+          ENG = "Error while storing data: no slot defined for train '%s'", 
+          FRA = "Erreur lors de l'enregistrement des données: aucun emplacement défini pour le train '%s'", 
+        }, trainName )
+      )
+    
     end
     if Train.slot then 
       local text = serialize( data )
       local ok = EEPSaveData( Train.slot or 0, text )
       if ok then 
-        printLog(2, string.format("Store data for train '%s' in slot %d: %s", trainName, Train.slot, text))
+        printLog(2, stringFormat({
+            GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
+            ENG = "Store data for train '%s' in slot %d: %s", 
+            FRA = "Stocker les données du train '%s' dans le slot %d: %s", 
+          }, trainName, Train.slot, text )
+        )
+        
       else
-        print(string.format("Storing data for train '%s' in slot %d failed: %s", trainName, Train.slot or 0
-        , text))
+      
+        print(stringFormat({
+            GER = "Speichern von Daten für Zug '%s' in Slot %d fehlgeschlagen: %s", 
+            ENG = "Storing data for train '%s' in slot %d failed: %s", 
+            FRA = "Le stockage des données pour le train '%s' dans l'emplacement %d a échoué: %s", 
+          }, trainName, Train.slot or 0, text )
+        )
+        
       end 
     end    
   end
@@ -203,21 +283,51 @@ local function readTrainData( trainName )
     -- use a tag text
     local wagonName = getEngine( trainName ) or ""
     local ok, text = EEPRollingstockGetTagText( wagonName )
-    printLog(2, string.format("Retrieve tag text from train '%s' wagon: '%s': %s", trainName, wagonName, text))
+    printLog(2, stringFormat({
+        GER = "Abrufen des Tag-Textes aus dem Zug '%s'-Wagen '%s': %s", 
+        ENG = "Retrieve tag text from train '%s' wagon '%s': %s", 
+        FRA = "Récupérer le texte de l'étiquette du train '%s' wagon '%s': %s", 
+      }, trainName, wagonName, text )
+    )
+    
     local data = deserialize( text )
     return data
 
   else 
     -- use a data slot
     local Train = TrainTab[ trainName ]
-    check(Train, string.format("Error while reading data: no train '%s' found", trainName))
-    check(Train.slot, string.format("Error while reading data: no slot defined for train '%s'", trainName))
+    
+    check(Train, stringFormat({
+        GER = "Fehler beim Lesen von Daten: Zug '%s' nicht gefunden", 
+        ENG = "Error while reading data: train '%s' not found", 
+        FRA = "Erreur lors de la lecture des données: train '%s' non trouvé", 
+      }, trainName )
+    )
+    
+    check(Train.slot, stringFormat({
+        GER = "Fehler beim Lesen der Daten: kein Slot für Zug '%s' definiert", 
+        ENG = "Error while reading data: no slot defined for train '%s'", 
+        FRA = "Erreur lors de la lecture des données: aucun emplacement défini pour le train '%s'", 
+      }, trainName )
+    )
 
     local ok, text = EEPLoadData( Train.slot or 0 )
     if ok then 
-      printLog(2, string.format("Retrieve data for train '%s' from slot %d: %s", trainName, Train.slot, text))
+      printLog(2, stringFormat({
+          GER = "Abrufen von Daten für den Zug '%s' von Slot %d: %s", 
+          ENG = "Retrieve data for train '%s' from slot %d: %s", 
+          FRA = "Récupérer les données pour le train '%s' depuis l'emplacement %d: %s", 
+        }, trainName, Train.slot, text )
+      )
+      
     else
-      print(string.format("Reading data for train '%s' from slot %d failed", trainName, Train.slot or 0))
+      print(stringFormat({
+          GER = "Fehler: Lesen der Daten für Zug '%s' von Slot %d fehlgeschlagen", 
+          ENG = "Error: Reading data for train '%s' from slot %d failed", 
+          FRA = "Erreur: La lecture des données du train '%s' à partir de l'emplacement %d a échoué", 
+        }, trainName, Train.slot or 0 )
+      )
+      
     end    
     local data = deserialize( text )
     return data
@@ -342,12 +452,40 @@ local function copyBlockTracks (blockTracks)
     local EEPRegisterTrackFunctions = { EEPRegisterRailTrack, EEPRegisterRoadTrack, EEPRegisterTramTrack, EEPRegisterAuxiliaryTrack, EEPRegisterControlTrack }
     local EEPRegisterTrack = EEPRegisterTrackFunctions[trackSystem]
     for k, track in pairs(Block.prev) do
-      if not EEPRegisterTrack( track )      then print("Error: track "..track.." does not exists") end
+      if not EEPRegisterTrack( track ) then 
+        print(stingFormat({
+            GER = "Fehler: Gleis %d existiert nicht",
+            ENG = "Error: track %d does not exist",
+            FRA = "Erreur: la piste %d n'existe pas",
+          }, track )
+        )
+      end
     end
-    if not EEPRegisterTrack( Block.first )  then print("Error: track "..Block.first.." does not exists") end
-    if not EEPRegisterTrack( Block.last )   then print("Error: track "..Block.last.." does not exists") end
+    if not EEPRegisterTrack( Block.first ) then 
+      print(stingFormat({
+            GER = "Fehler: Gleis %d existiert nicht",
+            ENG = "Error: track %d does not exist",
+            FRA = "Erreur: la piste %d n'existe pas",
+        }, Block.first )
+      ) 
+    end
+    if not EEPRegisterTrack( Block.last ) then 
+      print(stingFormat({
+            GER = "Fehler: Gleis %d existiert nicht",
+            ENG = "Error: track %d does not exist",
+            FRA = "Erreur: la piste %d n'existe pas",
+        }, Block.last )
+      ) 
+    end
     for k, track in pairs(Block.next) do
-      if not EEPRegisterTrack( track )      then print("Error: track "..track.." does not exists") end
+      if not EEPRegisterTrack( track ) then 
+        print(stingFormat({
+            GER = "Fehler: Gleis %d existiert nicht",
+            ENG = "Error: track %d does not exist",
+            FRA = "Erreur: la piste %d n'existe pas",
+          }, track )
+        ) 
+      end
     end
     
   end
@@ -490,7 +628,14 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     for _r, _Route in pairs(routeTab) do
       if _Route[1] == fromBlock and _Route[2] == toBlock then  -- Do we know such a route already?
         found = true
-        printLog(1, "Alternate route from block ",fromBlock," to block ",toBlock," is ignored. Only the shortest route is used.")
+        
+        printLog(1, stringFormat({
+            GER = "Eine alternative Route von Block %d nach Block %d wird ignoriert. Es wird nur die kürzeste Route verwendet.", 
+            ENG = "Alternate route from block %d to block %d is ignored. Only the shortest route is used.", 
+            FRA = "L'itinéraire alternatif du bloc %d au bloc %d est ignoré. Seul l'itinéraire le plus court est utilisé.", 
+          }, fromBlock, toBlock )
+        )
+        
         if #_Route.turn > #turn then                           -- Is the new route shorter than the known route?
           _Route.turn = turn                                   -- Store the shorter route
         end		  
@@ -531,9 +676,21 @@ local function copyRoutes (routes)                -- Copy routes into route tabl
     end
     
     if pathExists then                            -- Generate path for this route if no explicit path is provided
-      printLog(2, "Path for route from block ",fromBlock," to block ",toBlock," already found")
+      printLog(2, stringFormat({
+          GER = "Pfad für Route von Block %d nach Block %d bereits gefunden",
+          ENG = "Path for route from block %d to block %d already found",
+          FRA = "Le chemin pour la route du bloc %d au bloc %d a déjà été trouvé",
+        }, fromBlock, toBlock )
+      )
+      
     else
-      printLog(2, "Generated path for route from block ",fromBlock," to block ",toBlock)
+      printLog(2, stringFormat({
+          GER = "Generierter Pfad für Route von Block %d nach Block %d",
+          ENG = "Generated path for route from block %d to block %d",
+          FRA = "Chemin généré pour la route du bloc %d au bloc %d",
+        }, fromBlock, toBlock )
+      )
+      
       if not pathTab[fromBlock] then
         pathTab[fromBlock] = { }                  -- Create new entry for this starting block
       end
@@ -613,36 +770,102 @@ end
 
 local function printData ()
   
-  print("\nBlocks:")
+  print(
+    "\n"..
+    stringFormat({
+      GER = "Blöcke",
+      ENG = "Blocks",
+      FRA = "Blocs",
+    })..
+    ":"
+  )
   for b, Block in pairsByKeys(BlockTab) do
     if useBlockIndexNumbers then 
-      print("Block ",b," Signal ",Block.signal)
+      print(
+        stringFormat({
+            GER = "Block %d",
+            ENG = "Block %d",
+            FRA = "Bloc %d",
+          }, b ),
+        " ",
+        stringFormat({
+            GER = "Signal %d",
+            ENG = "Signal %d",
+            FRA = "Signal %d",
+          }, Block.signal )
+      )
     else  
-      print("Block ",Block.signal)
+      print(
+        stringFormat({
+            GER = "Block %d",
+            ENG = "Block %d",
+            FRA = "Bloc %d",
+          }, Block.signal )
+      )
     end  
   end
 
-  print("\nRoutes:")
+  print(
+    "\n"..
+    stringFormat({
+      GER = "Routen",
+      ENG = "Routes",
+      FRA = "Routes",
+    })..
+    ":"
+  )
   local sortRoutes = function(a,b) 
     local ra = routeTab[a]
     local rb = routeTab[b]
     return ra[1] == rb[1] and ra[2] < rb[2] or ra[1] < rb[1] 
   end  
   for _, Route in pairsByKeys(routeTab, sortRoutes) do
-    print("From block ",Route[1]," to block ",Route[2]
-      ," via turnouts ",table.concat(Route.turn, ", ")
-      ,(Route.reverse and ", reverse direction at from block" or "") -- Reverse direction when leaveing the from block
+    print(
+      stringFormat({
+          GER = "Von Block %d nach Block %d über Weichen %s",
+          ENG = "From block %d to block %d via turnouts %s",
+          FRA = "Du bloc %d au bloc %d via les aiguillages %s",
+        }, Route[1], Route[2], table.concat(Route.turn, ", ") ),
+      (Route.reverse
+        and stringFormat({
+            GER = " mit Umkehrung der Richtung beim Startlock",
+            ENG = " reverse direction at starting block", 
+            FRA = " averc inversion de la direction au bloc de départ",
+          })
+        or ""
+      )
     )
   end
 
-  print("\nExpanded paths:")
+  print(
+    "\n"..
+    stringFormat({
+        GER = "Erweiterte Pfade",
+        ENG = "Expanded paths",
+        FRA = "Des chemins élargis",
+    })..
+    ":"
+  )
   for fromBlock, paths in pairs(pathTab) do
     for _, path in pairs(paths) do
-      print("From block ",fromBlock," on path ",table.concat(path, ", "))
+      print(stringFormat({
+          GER = "Von Block %d auf Pfad %s",
+          ENG = "From block %d on path %s",
+          FRA = "Du bloc %d sur le chemin %s",
+        }, fromBlock, table.concat(path, ", ") )
+      )
     end
   end
 
-  print("\nTrains:")
+  print(
+    "\n"..
+    stringFormat({
+        GER = "Züge",
+        ENG = "Trains",
+        FRA = "Trains",
+    })..
+    ":"
+  )
   for _, Train in pairsByKeys(TrainTab) do
     local allowedBlocks = ""
     for b, waitTime in pairsByKeys(Train.allowed) do
@@ -653,11 +876,41 @@ local function printData ()
     end  
   
     print(
-      "Train '",Train.name,"'", 
-      (Train.signal      and ", Signal "..Train.signal                                            or ""),
-      (Train.targetSpeed and ", target speed "..string.format("%.1f", Train.targetSpeed).." km/h" or ""),
-      (Train.speed       and ", last speed "..string.format("%.1f", Train.speed).." km/h"         or ""),       
-      ", allowed blocks "..allowedBlocks
+      stringFormat({
+          GER = "Zug '%s'", 
+          ENG = "Train '%s'", 
+          FRA = "Train '%s'", 
+        }, Train.name ),
+      ", ",  
+      (Train.signal      
+        and stringFormat({
+                GER = "Signal %s",
+                ENG = "Signal %s",
+                FRA = "Signal %s",
+              }, Train.signal )
+        or ""),
+      ", ",  
+      (Train.targetSpeed 
+        and stringFormat({
+                GER = "Zielgeschwindigkeit %.1f km/h",
+                ENG = "target speed %.1f km/h",
+                FRA = "vitesse cible %.1f km/h",
+              }, Train.targetSpeed )                
+        or ""),
+      ", ",  
+      (Train.speed
+        and stringFormat({
+                GER = "letzte Geschwindigkeit %.1f km/h",
+                ENG = "last speed %.1f km/h",
+                FRA = "dernière vitesse %.1f km/h",
+              }, Train.speed )
+        or ""),       
+      ", ",
+      stringFormat({
+          GER = "erlaubte Blöcke %s",
+          ENG = "allowed blocks %s",
+          FRA = "blocs autorisés %s",
+        }, allowedBlocks )
     )
   end
   
@@ -668,6 +921,7 @@ end
 local function init ( Options )
 --[[
 Options.logLevel          Log level 0 (default): off, 1: normal, 2: full, 3: extreme
+Options.language          Language GER, ENG (default), FRA
 
 Options.MAINSW            ID of the main switch (optional)
 
@@ -688,14 +942,26 @@ Options.routes            Routes via turnouts from one block to the next block
 Options.paths             Paths on which trains can go
 --]]
 
-  check(BLKSIGRED == nil, "Error: Module blockControl is already initialized")
+  if Options.language and ({ GER = true, ENG = true, FRA = true, })[Options.language] then
+    language = Options.language
+  end
+
+  check(BLKSIGRED == nil, stringFormat({
+      GER = "Fehler: Modul blockControl ist bereits initialisiert",
+      ENG = "Error: Module blockControl is already initialized",
+      FRA = "Erreur: Le module blockControl est déjà initialisé",
+  }))
 
   if Options.logLevel then
     logLevel = Options.logLevel
   end
 
-  printLog(1, "Version of module blockControl: " .. _VERSION)
-
+  printLog(1, stringFormat({
+      GER = "Version des Moduls blockControl: %s",
+      ENG = "Version of module blockControl: %s",
+      FRA = "Version du module blockControl: %s",
+    }, _VERSION )
+  )
 
   if Options.BetterContacts ~= nil then
     useBetterContacts = Options.BetterContacts
@@ -720,7 +986,14 @@ Options.paths             Paths on which trains can go
     _ENV["EEPOnSignal_"..MAINSW] = function(pos)
       if pos == MAINON then
         showTippText = not showTippText
-        printLog(2, "Toggle tipp text: ",tostring(showTippText))
+        
+        printLog(2, stringFormat({
+            GER = "Tipp-Text umschalten: %s",
+            ENG = "Toggle tipp text: %s",
+            FRA = "Texte de basculement: %s",
+          }, tostring(showTippText) )
+        )
+        
       end
     end
   end
@@ -741,9 +1014,19 @@ Options.paths             Paths on which trains can go
     end
   end
   if useBlockIndexNumbers then
-    printLog(1, "Block index numbers 1, ..., ", #Options.blockSignals, " are used to identify blocks")
+    printLog(2, stringFormat({
+        GER = "Blockindexnummern 1, ..., %d werden zur Identifizierung von Blöcken verwendet", 
+        ENG = "Block index numbers 1, ..., %d are used to identify blocks", 
+        FRA = "Les numéros d'index de bloc 1, ..., %d sont utilisés pour identifier les blocs", 
+      }, #Options.blockSignals )
+    )
+    
   else
-    printLog(1, "Block signal numbers are used to identify blocks")
+    printLog(2, stringFormat({
+        GER = "Blocksignalnummern werden zur Identifizierung von Blöcken verwendet",
+        ENG = "Block signal numbers are used to identify blocks",
+        FRA = "Les numéros de signal de bloc sont utilisés pour identifier les blocs",
+    }))
   end  
 
 
@@ -771,7 +1054,14 @@ Options.paths             Paths on which trains can go
       if type(firstEntry) == "number" then          -- option a) or b)
         for b, twoWayBlock in pairs(Options.twoWayBlocks) do
           if twoWayBlock and twoWayBlock >= 1 then
-            check(BlockTab[twoWayBlock], "Error in 'twoWayBlocks': Unknown block ",twoWayBlock," in twoWayBlock["..b.."]")
+          
+            check( BlockTab[twoWayBlock], stringFormat({
+                GER = "Fehler in 'twoWayBlocks': Unbekannter Block %d in twoWayBlock[%d]",
+                ENG = "Error in 'twoWayBlocks': Unknown block %d in twoWayBlock[%d]",
+                FRA = "Erreur dans 'twoWayBlocks': Bloc inconnu %d dans twoWayBlock[%d]",
+              }, twoWayBlock, b )
+            )
+            
           end
         end
 
@@ -779,8 +1069,21 @@ Options.paths             Paths on which trains can go
         for k, relatedBlocks in pairs(Options.twoWayBlocks) do
           local b1 = relatedBlocks[1]
           local b2 = relatedBlocks[2]
-          check(b1 >= 1 and BlockTab[b1], "Error in 'twoWayBlocks': Unknown block ",b1," in twoWayBlocks["..k.."]")
-          check(b2 >= 1 and BlockTab[b2], "Error in 'twoWayBlocks': Unknown block ",b2," in twoWayBlocks["..k.."]")
+          
+          check(b1 >= 1 and BlockTab[b1], stringFormat({
+              GER = "Fehler in 'twoWayBlocks': Unbekannter Block %d in twoWayBlock[%d]",
+              ENG = "Error in 'twoWayBlocks': Unknown block %d in twoWayBlock[%d]",
+              FRA = "Erreur dans 'twoWayBlocks': Bloc inconnu %d dans twoWayBlock[%d]",
+            }, b1, k )
+          )
+          
+          check(b2 >= 1 and BlockTab[b2], stringFormat({
+              GER = "Fehler in 'twoWayBlocks': Unbekannter Block %d in twoWayBlock[%d]",
+              ENG = "Error in 'twoWayBlocks': Unknown block %d in twoWayBlock[%d]",
+              FRA = "Erreur dans 'twoWayBlocks': Bloc inconnu %d dans twoWayBlock[%d]",
+            }, b2, k )
+          )
+          
         end
       end
     end 
@@ -805,21 +1108,54 @@ Options.paths             Paths on which trains can go
     for r, Route in pairs(Options.routes) do
       local b1 = Route[1]
       local b2 = Route[2]
+      
       -- Do routes contain existing blocks only (or do we see more numbers)?
-      check( b1 >= 1 and BlockTab[b1], "Error in 'routes': Unknown first block ",b1," in route["..r.."]" )
-      check( b2 >= 1 and BlockTab[b2], "Error in 'routes': Unknown second block ",b2," in route["..r.."]" )
+      check( b1 >= 1 and BlockTab[b1], stringFormat({
+          GER = "Fehler in 'routes': Unbekannter erster Block %d in route[%d]",
+          ENG = "Error in 'routes': Unknown first block %d in route[%d]",
+          FRA = "Erreur dans 'routes': Premier bloc inconnu %d dans route[%d]",
+        }, b1 , r )
+      )
+      
+      check( b2 >= 1 and BlockTab[b2], stringFormat({
+          GER = "Fehler in 'routes': Unbekannter zweiter Block %d in route[%d]",
+          ENG = "Error in 'routes': Unknown second block %d in route[%d]",
+          FRA = "Erreur dans 'routes': Deuxième bloc %d inconnu dans route[%d]",
+        }, b2, r )
+      )
+      
       -- Do all blocks have at least one route where this block is the first block?
       fromBlocks[b1] = true
       -- Do all blocks have at least one route where this block is the second block?
       toBlocks[b2] = true
-      -- Consistency checks for Route.turn
-      check( #Route.turn % 2 == 0, "Error in 'routes': No pair of data in route["..r.."].turn" )
+      
+      -- Consistency checks for Route.turn      
+      check( #Route.turn % 2 == 0, stringFormat({
+          GER = "Fehler in 'routes': Kein Paar von Daten in route[%d].turn",
+          ENG = "Error in 'routes': No pair of data in route[%d].turn",
+          FRA = "Erreur dans 'routes': Aucune paire de données dans route[%d].turn",
+        }, r )
+      )
+      
     end
     for b, _ in pairs(BlockTab) do
+    
       -- Do all blocks have at least one route where this block is the first block?
-      check(fromBlocks[b], "Error in 'routes': Block ",b," is not a starting block of any route")
+      check(fromBlocks[b], stringFormat({
+          GER = "Fehler in 'routes': Block %d ist kein Startblock einer Route",
+          ENG = "Error in 'routes': Block %d is not a starting block of any route",
+          FRA = "Erreur dans 'routes': Le bloc %d n'est pas le bloc de départ d'un itinéraire",
+        }, b )
+      )
+      
       -- Do all blocks have at least one route where this block is the second block?
-      check(toBlocks[b],   "Error in 'routes': Block ",b," is not an ending block of any route")
+      check(toBlocks[b], stringFormat({
+          GER = "Fehler in 'routes': Block %d ist kein Zielblock einer Route",
+          ENG = "Error in 'routes': Block %d is not a target block of any route",
+          FRA = "Erreur dans 'routes': Le bloc %d n'est pas un bloc cible d'une route",
+        }, b )
+      )
+      
     end
   end
   
@@ -835,18 +1171,38 @@ Options.paths             Paths on which trains can go
     fromBlocks[fromBlock] = true
     for p, path in pairs(paths) do
       for k, block in ipairs(path) do -- Within a path, the order of the blocks is important, therefore 'ipairs' is important here
+      
         -- Do paths contain existing blocks only (or do we see more numbers)?
-        check( block >= 1 and BlockTab[block], "Error in 'routes' / 'paths': Unknown block ",block," in a path starting from block "..fromBlock )
+        check( block >= 1 and BlockTab[block], stringFormat({
+            GER = "Fehler in 'routes' / 'paths': Unbekannter Block %d in einem Pfad, der mit Block %d beginnt",
+            ENG = "Error in 'routes' / 'paths': Unknown block %d in a path starting from block %d",
+            FRA = "Erreur dans 'routes' / 'paths': Bloc %d inconnu dans un chemin commençant par le bloc %d",
+          }, block, fromBlock ) 
+        )
+        
         -- Do all blocks have at least one path where this block is a via or an ending block?
         if k > 1  then toBlocks[block] = true end
       end
     end
   end
   for b, _ in pairs(BlockTab) do
+  
     -- Do all blocks have at least one route where this block is the first block?
-    check(fromBlocks[b], "Error in 'routes' / 'paths': Block ",b," is not a starting block of any path")
+    check(fromBlocks[b], stringFormat({
+        GER = "Fehler in 'routes' / 'paths': Block %d ist kein Startblock eines Pfades",
+        ENG = "Error in 'routes' / 'paths': Block %d is not a starting block of any path",
+        FRA = "Erreur dans 'routes' / 'paths': Le bloc %d n'est pas le bloc de départ d'un chemin.",
+      }, b )
+    )
+    
     -- Do all blocks have at least one route where this block is the second block?
-    check(toBlocks[b],   "Error in 'routes' / 'paths': Block ",b," is not a via or an ending block of any path")
+    check(toBlocks[b], stringFormat({
+        GER = "Fehler in 'routes' / 'paths': Block %d ist weder ein Durchgangs- noch ein Zielblock eines Pfades",
+        ENG = "Error in 'routes' / 'paths': Block %d is not a via or a target block of any path",
+        FRA = "Erreur dans 'routes' / 'paths': Le bloc %d n'est pas un bloc via ou un bloc cible d'un chemin",
+      }, b )
+    )
+    
   end
   
   
@@ -857,7 +1213,12 @@ Options.paths             Paths on which trains can go
     -- (The function uses 'BlockTab').
     copyTrains( Options.trains )
   else
-    printLog(1, "No train data is provided. Wait until all trains are detected before starting automatic mode.")
+    printLog(1, stringFormat({
+        GER = "Es werden keine Zugdaten bereitgestellt. Warten Sie, bis alle Züge erfasst sind, bevor Sie den Automatikmodus starten.",
+        ENG = "No train data is provided. Wait until all trains are detected before starting automatic mode.",
+        FRA = "Aucune donnée sur les trains n'est fournie. Attendez que tous les trains soient détectés avant de lancer le mode automatique.",
+      })
+    )
   end
 
   -- Show data
@@ -871,11 +1232,16 @@ end
 local function set ( Options )
 --[[
 Options.logLevel          Log level 0 (default): off, 1: normal, 2: full, 3: extreme
+Options.language          Language GER, ENG (default), FRA
 Options.showTippText      Show (true) or hide (false) tipp texts on signals
 Options.start             Set the main signal "green" (true) respective to "red" (false) as soon as find mode is finished
 Options.startAllTrains    Set the train signals of all trains to "green" (true) respective to "red" (false)
 --]]
 
+  if Options.language and ({ GER = true, ENG = true, FRA = true, })[Options.language] then
+    language = Options.language
+  end
+  
   if Options.logLevel then
     logLevel = Options.logLevel
   end
@@ -918,13 +1284,16 @@ local runtime = {
 
 local findMode = true
 local function findTrains ()
+  local text = stringFormat({
+    GER = "Der Modus 'Zugsuche' ist aktiv",
+    ENG = "The 'Find Train' mode is active",
+    FRA = "Le mode de 'recherche de train' est actif",
+  })
   if cycle == 1 then 
-    local text    = string.format("FIND MODE is active")
     printLog(1, text)
   end  
   if cycle <= 7 then -- I've no idea why it is neccessary to wait for at least 7 cycles after loading a layout
     if EEPShowInfoTextTop then
-      local text      = string.format("FIND MODE is active")
       local r, g, b   = 1, 1, 1   -- red, green, blue
       local size      = 1         -- Font size 0.5 .. 2
       local duration  = 10        -- Duration in seconds, min. 5 sec.
@@ -978,17 +1347,40 @@ local function findTrains ()
         end
         
         TrainTab[trainName] = Train
-        printLog(1, string.format("Create new train %s' in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
+        printLog(1, stringFormat({
+            GER = "Neuen Zug '%s' im Block %d mit Zielgeschwindigkeit %.1f km/h anlegen", 
+            ENG = "Create new train '%s' in block %d with target speed %.1f km/h", 
+            FRA = "Création d'un nouveau train '%s' dans le bloc %d avec la vitesse cible %.1f km/h", 
+          }, trainName, b, Train.targetSpeed )
+        )
 
       elseif not Train.block then                       -- We can assign the block to a named train.
         if reversingRoutesExist then                    -- The target speed is required to reverse trains
           if Train.targetSpeed ~= 0 then 
-            printLog(1, string.format("Train '%s' found in block %d with target speed %.1f km/h", trainName, b, Train.targetSpeed))
+            printLog(1, stringFormat({
+                GER = "Zug '%s' gefunden in Block %d mit Zielgeschwindigkeit %.1f km/h", 
+                ENG = "Train '%s' found in block %d with target speed %.1f km/h", 
+                FRA = "Train '%s' trouvé dans le bloc %d avec une vitesse cible de %.1f km/h", 
+              }, trainName, b, Train.targetSpeed )
+            )
+            
           else  
-            print(string.format("Error: Train '%s' found in block %d has no target speed", trainName, b))
+            print(stringFormat({
+                GER = "Fehler: Der Zug '%s' in Block %d hat keine Zielgeschwindigkeit", 
+                ENG = "Error: Train '%s' found in block %d has no target speed", 
+                FRA = "Erreur: Le train '%s' trouvé dans le bloc %d n'a pas de vitesse cible", 
+              }, trainName, b )
+            )
+            
           end
         else                                            -- No need to handle any target speed
-          printLog(1, string.format("Train '%s' found in block %d", trainName, b))
+          printLog(1, stringFormat({
+              GER = "Zug '%s' in Block %d gefunden", 
+              ENG = "Train '%s' found in block %d", 
+              FRA = "Train '%s' trouvé dans le bloc %d", 
+            }, trainName, b )
+          )
+          
         end
 
       else
@@ -1017,7 +1409,13 @@ local function findTrains ()
           trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
         end
       end
-      check( trainHasAvailablePath, "Error: No available path for train '"..Train.name.."' in block ",b )       
+      
+      check( trainHasAvailablePath, stringFormat({
+            GER = "Fehler: Kein verfügbarer Pfad für Zug '%s' in Block %d",
+            ENG = "Error: No available path for train '%s' in block %d",
+            FRA = "Erreur: Aucun chemin disponible pour le train '%s' dans le bloc %d",
+          }, Train.name, b )
+      )
       
     end
   end
@@ -1037,13 +1435,25 @@ local function findTrains ()
   if finished then
     if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
-      printLog(1, "FIND MODE finished")
+      
+      printLog(1, stringFormat({
+          GER = "Der Modus 'Zugsuche' wurde beendet",
+          ENG = "The 'Find Train' mode has ended",
+          FRA = "Le mode 'Trouver des Trains' est terminé",
+        })
+      )
+      
       if EEPHideInfoTextTop then
         EEPHideInfoTextTop()
       end
     else
       if cycle % 50 == 1 then               -- Do this every 10 seconds, given that EEPMain() runs 5x/s
-        local text    = string.format("FIND MODE has detected %d trains", count)
+        local text    = stringFormat({
+            GER = "Der Modus 'Zugsuche' hat %d Züge gefunden",
+            ENG = "The 'Find Train' mode has detected %d trains",
+            FRA = "Le mode 'Trouver des Trains' a détecté %d trains",
+          }, count )
+          
         printLog(1, text)
         if EEPShowInfoTextTop then
           local r, g, b   = 1, 1, 1   -- red, green, blue
@@ -1064,7 +1474,7 @@ end
 local function showSignalStatus()
   if not EEPChangeInfoSignal then return end
 
-  -- <j> linkbÃ¼ndig, <c> zentriert, <r> rechtsbÃ¼ndig, <br> Zeilenwechsel
+  -- <j> linkbündig, <c> zentriert, <r> rechtsbündig, <br> Zeilenwechsel
   -- <b>Fett</b>, <i>Kursiv</i>, <fgrgb=0,0,0> Schriftfarbe, <bgrgb=0,0,0> Hintergrundfarbe
   -- siehe https://www.eepforum.de/forum/thread/34860-7-6-3-tipp-texte-f%C3%BCr-objekte-und-kontaktpunkte/
   local tippTextRED    = "<bgrgb=240,0,0>"
@@ -1075,15 +1485,36 @@ local function showSignalStatus()
   if findMode then
     local pos = math.floor( EEPGetSignal( MAINSW ) )
     EEPChangeInfoSignal( MAINSW, 
-      "<b>Initialization: Find trains in blocks</b>"
-      ..(logLevel >= 2 and string.format("<br>Signal position %d", pos) or "")
+      "<b>"..stringFormat({
+        GER = "Initialisierung: Züge in Blöcken finden",
+        ENG = "Initialization: Find trains in blocks",
+        FRA = "Initialisation: Trouver les trains dans les blocs",
+      }).."</b>"
+      ..(logLevel >= 2 and "<br>"..stringFormat({
+          GER = "Signalposition %d",
+          ENG = "Signal position %d",
+          FRA = "Position du signal %d",
+        }, pos) or "")
     )
     EEPShowInfoSignal( MAINSW, true )
   else
     local pos = EEPGetSignal( MAINSW )
-    EEPChangeInfoSignal(MAINSW, "Block control is active"
-      ..(logLevel >= 2 and string.format("<br>Signal position %d", pos) or "")
-      .."<br>".. (pos == MAINOFF and tippTextRED.."RED" or tippTextGREEN.."GREEN")
+    EEPChangeInfoSignal(MAINSW, 
+      stringFormat({
+        GER = "Blockkontrolle ist aktiv",
+        ENG = "Block control is active",
+        FRA = "Le contrôle de bloc est actif",
+      })
+      ..(logLevel >= 2 and "<br>"..stringFormat({
+          GER = "Signalposition %d",
+          ENG = "Signal position %d",
+          FRA = "Position du signal %d",
+        }, pos) or "")
+      .."<br>"
+      ..( pos == MAINOFF 
+          and tippTextRED..  stringFormat({ GER = "ROT",  ENG = "RED",   FRA = "ROUGE", }) 
+          or  tippTextGREEN..stringFormat({ GER = "GRÜN", ENG = "GREEN", FRA = "VERT",  })
+        )
     )
     EEPShowInfoSignal( MAINSW, showTippText )
   end
@@ -1100,11 +1531,29 @@ local function showSignalStatus()
     end
 
     EEPChangeInfoSignal( signal, 
-        string.format("Block %d", b)
---    ..string.format(" (%d)", signal)
-      ..( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("<br>Signal position %d", pos) or "")
-      .."<br>".. string.sub(trainName, 2, -1)                 -- Show train name without leading # character
-      .."<br>".. ( Block.occupied and tippTextRED.."occupied" or ( Train and tippTextYELLOW.."reserved"  or tippTextGREEN.."free" ) )
+        stringFormat({
+            GER = "Block %d", 
+            ENG = "Block %d", 
+            FRA = "Bloc %d", 
+          }, b )
+--    .. string.format(" (%d)", signal)
+      .. ( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) 
+          and "<br>"..stringFormat({
+              GER = "Signalposition %d",
+              ENG = "Signal position %d",
+              FRA = "Position du signal %d", 
+            }, pos) 
+          or "")
+      .. "<br>"
+      .. string.sub(trainName, 2, -1)                 -- Show train name without leading # character
+      .. "<br>"
+      .. ( Block.occupied 
+          and tippTextRED          .. stringFormat({ GER = "besetzt",    ENG = "occupied", FRA = "occupé",  }) 
+          or ( Train 
+                and tippTextYELLOW .. stringFormat({ GER = "reserviert", ENG = "reserved", FRA = "réservé", })
+                or tippTextGREEN   .. stringFormat({ GER = "frei",       ENG = "free",     FRA = "libre",   }) 
+             ) 
+         )
     )
     EEPShowInfoSignal( signal, showTippText )
   end
@@ -1115,9 +1564,25 @@ local function showSignalStatus()
       local pos = math.floor( EEPGetSignal( Train.signal ) )
       EEPChangeInfoSignal( Train.signal,
            string.sub(trainName, 2, -1)                     -- Show train name without leading # character
-        .. ( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) and string.format("<br>Signal position %d", pos) or "")
-        .. (Train.block and "<br>Block "..Train.block or "")
-        .. "<br>"..(pos == TRAINSIGRED and tippTextRED.."STOP"   or tippTextGREEN.."GO")
+        .. ( (( findMode and logLevel >= 1 ) or logLevel >= 2 ) 
+              and "<br>"..stringFormat({
+                  GER = "Signalposition %d",
+                  ENG = "Signal position %d",
+                  FRA = "Position du signal %d",  
+                }, pos ) 
+              or "")
+        .. (Train.block 
+              and "<br>"..stringFormat({
+                  GER = "Block %d",
+                  ENG = "Block %d",
+                  FRA = "Bloc %d",
+                }, Train.block ) 
+              or "")
+        .. "<br>"
+        .. (pos == TRAINSIGRED 
+              and tippTextRED   .. stringFormat({ GER = "STOP",  ENG = "STOP", FRA = "STOP",  })
+              or  tippTextGREEN .. stringFormat({ GER = "FAHRT", ENG = "GO",   FRA = "ALLEZ", })
+           )
       )
       EEPShowInfoSignal( Train.signal, showTippText )
     end
@@ -1127,7 +1592,15 @@ local function showSignalStatus()
   for s, reserved in pairs(TurnReserved) do
     local pos = math.floor( EEPGetSwitch( s ) )
     EEPChangeInfoSwitch( s, 
-        "Switch "..s.."<br>position "..pos.."<br>"..(reserved and tippTextYELLOW.."reserved" or tippTextGREEN.."free")
+      stringFormat({ 
+          GER = "Weiche %d<br>Position %d<br>",
+          ENG = "Turnout %d<br>Position %d<br>",
+          FRA = "Aiguillage %d<br>Position %d<br>",
+        }, s, pos )
+        .. (reserved 
+            and tippTextYELLOW .. stringFormat({ GER = "reserviert", ENG = "reserved", FRA = "réservé", })
+            or  tippTextGREEN  .. stringFormat({ GER = "frei",       ENG = "free",     FRA = "libre",   })
+           )
     )
     EEPShowInfoSwitch( s, showTippText and logLevel >= 0 )
   end
@@ -1143,30 +1616,79 @@ local function printStatus( periodicTime )
     return
   end  
 
-  print("\n*** Status ***")
-
   print(
-    string.format("\nRun time per cycle after %1.0f sec", cycle / 5),
-    --string.format("\nTotal:   %8.3f sec", runtime.total),
-    --string.format("\nMin:     %8.3f sec", runtime.min),
-    string.format("\nAverage: %8.3f sec", runtime.total / cycle),
-    string.format("\nMax:     %8.3f sec", runtime.max)
+    "\n*** ", 
+    stringFormat({
+        GER = "Status",
+        ENG = "Status",
+        FRA = "Statut",
+      }),
+    " ***"
   )
 
-  print("\nTrains\n")
+  print(
+    "\n",
+    stringFormat({
+        GER = "Laufzeit pro Zyklus nach %1.0f sec", 
+        ENG = "Run time per cycle after %1.0f sec", 
+        FRA = "Temps de fonctionnement par cycle après %1.0f sec", 
+      }, cycle / 5 ),
+    "\n",
+    stringFormat({
+        GER = "Durchschnitt: %8.3f sec", 
+        ENG = "Average: %8.3f sec", 
+        FRA = "Moyenne: %8.3f sec", 
+      }, runtime.total / cycle ),
+    "\n",
+    stringFormat({
+        GER = "Max:          %8.3f sec", 
+        ENG = "Max:     %8.3f sec", 
+        FRA = "Max:     %8.3f sec", 
+      }, runtime.max )
+    --string.format("\nMin:     %8.3f sec", runtime.min),
+    --string.format("\nTotal:   %8.3f sec", runtime.total),
+  )
+
+  print(
+    "\n",
+    stringFormat({
+        GER = "Züge",
+        ENG = "Trains",
+        FRA = "Trains",
+    }),
+    "\n"
+  )
 
   for trainName, Train in pairsByKeys(TrainTab) do
     
-    local text = "Train '"..trainName.."'"
+    local text = stringFormat({
+        GER = "Zug '%s'",
+        ENG = "Train '%s'",
+        FRA = "Train '%s'",
+      }, trainName )
 
     if EEPGetTrainLength then 
       local ok, trainLength = EEPGetTrainLength( trainName ) 
-      text = text..", length "..string.format("%d", math.floor(trainLength)).." m"
+      text = text..", "..stringFormat({
+          GER = "Länge %d m",
+          ENG = "length %d m",
+          FRA = "longueur %d m",
+        }, math.floor(trainLength) )
     end
 
     if Train.signal then
       local pos = math.floor( EEPGetSignal( Train.signal ))
-      text = text..", Signal "..Train.signal.." "..(pos == TRAINSIGRED and "STOP" or "GO")
+      text = text..", "..
+        stringFormat({
+            GER = "Signal %s", 
+            ENG = "Signal %s", 
+            FRA = "Signal %s", 
+          }, Train.signal )..
+        " "..
+        (pos == TRAINSIGRED 
+          and stringFormat({ GER = "STOP",  ENG = "STOP", FRA = "STOP",  }) 
+          or  stringFormat({ GER = "FAHRT", ENG = "GO",   FRA = "ALLEZ", })
+        )
     end
 
     local ok, speed = EEPGetTrainSpeed( trainName )
@@ -1176,42 +1698,96 @@ local function printStatus( periodicTime )
 
     local Block
     if Train.block then
-      text = text..", block "..Train.block
+      text = text..", "..
+        stringFormat({
+            GER = "Block %d",
+            ENG = "block %d",
+            FRA = "bloc %d",
+          }, Train.block )
+            
       Block = BlockTab[ Train.block ]
     end
 
     if Train.path then 
-      text = text..", path "..table.concat(Train.path, " ")
+      text = text..", "..
+        stringFormat({
+            GER = "Pfad %s",
+            ENG = "path %s",
+            FRA = "chemin %s",
+          }, table.concat(Train.path, " ") )
     end 
     
     if Block and not Train.path then 
-      text = text..", timer "..string.format("%d", math.floor(Block.stopTimer/5)).." sec"
+      text = text..", "..
+        stringFormat({
+            GER = "Timer %d sec",
+            ENG = "timer %d sec",
+            FRA = "temps %d sec",
+          }, math.floor(Block.stopTimer/5) )
     end
 
     if Block and Block.request then 
-      text = text..", route requested"
+      text = text..", "..
+        stringFormat({
+            GER = "Route angefordert",
+            ENG = "route requested",
+            FRA = "route demandée",
+          })
     end
     
-    text = text..", visited blocks: "..Train.visits
+    text = text..", "..
+      stringFormat({
+          GER = "besuchte Blöcke: %d",
+          ENG = "visited blocks: %d",
+          FRA = "blocs visités: %d",
+        }, Train.visits )
     
     print(text)
     
   end
 
-  print("\nBlocks\n")
+  print(
+    "\n",
+    stringFormat({
+        GER = "Blöcke",
+        ENG = "Blocks",
+        FRA = "Blocs",
+      }), 
+    "\n"
+  )
 
   for b, Block in pairsByKeys(BlockTab) do
     
-    local text = "Block "..b
+    local text = stringFormat({
+        GER = "Block %d",
+        ENG = "block %d",
+        FRA = "Bloc %d",
+      }, b )
   
-    local pos    = math.floor( EEPGetSignal( Block.signal ))
-    text = text.." "..(pos == BLKSIGRED and "STOP" or "GO")
+    local pos = math.floor( EEPGetSignal( Block.signal ))
+    text = text.." "..
+      (pos == BLKSIGRED 
+        and stringFormat({ GER = "STOP",  ENG = "STOP", FRA = "STOP",  }) 
+        or  stringFormat({ GER = "FAHRT", ENG = "GO",   FRA = "ALLEZ", })
+      )
     
     local Train = Block.reserved
-    text = text.." "..( Block.occupied and "occupied" or ( Train and "reserved"  or "free" ) )
+    text = text.." "..
+      ( Block.occupied 
+          and       stringFormat({ GER = "besetzt",    ENG = "occupied", FRA = "occupé",  }) 
+          or ( Train 
+                and stringFormat({ GER = "reserviert", ENG = "reserved", FRA = "réservé", })
+                or  stringFormat({ GER = "frei",       ENG = "free",     FRA = "libre",   })
+              ) 
+      )
     
     if Block.request then 
-      text = text..", route requested"
+      text = text..", "..
+        stringFormat({ 
+            GER = "Route angefordert",
+            ENG = "route requested",
+            FRA = "route demandée",
+          })
     end
 
     if Train then 
@@ -1219,20 +1795,39 @@ local function printStatus( periodicTime )
     end  
 
     if Block.stopTimer > 0 then 
-      text = text..", timer "..string.format("%d", math.floor(Block.stopTimer/5)).." sec"
+      text = text..", "..
+        stringFormat({
+            GER = "Timer %d sec",
+            ENG = "timer %d sec",
+            FRA = "temps %d sec",
+        }, math.floor(Block.stopTimer/5) )
     end
     
     if Block.visits > 0 then
-      text = text..", visited trains: "..Block.visits
+      text = text..", "..
+        "visited trains: "..Block.visits
     else
-        text = text..", not used by trains"
+        text = text..", "..
+          stringFormat({
+              GER = "nicht von Zügen benutzt",
+              ENG = "not used by trains",
+              FRA = "non utilisé par les trains",
+            })
     end
     
     print(text)
 
   end
 
-  print("\nRoutes\n")
+  print(
+    "\n",
+    stringFormat({
+      GER = "Routen",
+      ENG = "Routes",
+      FRA = "Routes",
+    }),  
+    "\n"
+  )
 
   local sortRoutes = function(a,b) 
     local ra = routeTab[a]
@@ -1241,12 +1836,27 @@ local function printStatus( periodicTime )
   end
   for r, Route in pairsByKeys(routeTab, sortRoutes) do
     
-    local text = "Route from block "..Route[1].." to "..Route[2]
+    local text = stringFormat({
+        GER = "Route von Block %d nach %d",
+        ENG = "Route from block %d to %d",
+        FRA = "Route du bloc %d à %d",
+      }, Route[1], Route[2] )
     
     if Route.visits > 0 then 
-        text = text..", used by trains: "..Route.visits
+        text = text..", "..
+          stringFormat({
+              GER = "von Zügen benutzt: %d",
+              ENG = "used by trains: %d",
+              FRA = "utilisé par les trains: %d",
+            }, Route.visits )
+            
     else
-        text = text..", not used by trains"
+        text = text..", "..
+          stringFormat({
+              GER = "nicht von Zügen benutzt",
+              ENG = "not used by trains",
+              FRA = "non utilisé par les trains",
+            })
     end
     
     print(text)
@@ -1275,7 +1885,14 @@ local function run ()
   end
 
   if cycle % 25 == 1 then               -- Do this every 5 seconds, given that EEPmain() runs 5x/s
-    if EEPGetSignal( MAINSW ) == MAINOFF then printLog(1, "Main switch of blockControl is off") end
+    if EEPGetSignal( MAINSW ) == MAINOFF then 
+      printLog(1, stringFormat({
+          GER = "Hauptschalter von blockControl ist aus",
+          ENG = "Main switch of blockControl is off",
+          FRA = "L'interrupteur principal du blockControl est éteint",
+        })
+      ) 
+    end
   end
 
   showSignalStatus()                    -- Show current signal status of all block signals
@@ -1302,11 +1919,23 @@ local function run ()
     if trainName ~= "" then 
       if Train then
         if trainName ~= Train.name then
-          print("Error: Block ",b,": Train at signal '",trainName,"' <> '",Train.name,"' in block" )
+          print(stringFormat({
+              GER = "Fehler: Block %d: Zug am Signal '%s' <> '%s' im Block",
+              ENG = "Error: Block %d: Train at signal '%s' <> '%s' in block",
+              FRA = "Erreur: Block %d: Train au signal '%s' <> '%s' dans le bloc",
+            }, b, trainName, Train.name )               
+          )
+          
 --enterBlock( trainName, b ) --###                               -- Let's try to fix it
         end
       else
-        print("Error: Block ",b,": Train '",trainName,"' at signal but no train has reserved the block" )
+        print(stringFormat({
+              GER = "Fehler: Block %d: Zug '%s' am Signal, aber kein Zug hat den Block reserviert",
+              ENG = "Error: Block %d: Train '%s' at signal but no train has reserved the block",
+              FRA = "Erreur: Block %d: Train '%s' au signal mais aucun train n'a réservé le bloc",
+          }, b, trainName )               
+        )
+        
 --enterBlock( trainName, b ) --###                               -- Let's try to fix it
      end 
     end      
@@ -1320,14 +1949,28 @@ local function run ()
           local driveTime = ( cycle - Train.enterBlockCycle ) / 5
           local stopTime = math.max( Train.allowed[b] - driveTime, 0 )
           if driveTime > 1 then
-            printLog(1, prefix, string.format("Train '%s' stops at block signal %d for at least %.0f seconds after driving for %.0f seconds", trainName, b, stopTime, driveTime))
+          
+            printLog(1, prefix, stringFormat({
+                GER = "Zug '%s' hält am Blocksignal %d für mindestens %.0f Sekunden nach einer Fahrzeit von %.0f Sekunden", 
+                ENG = "Train '%s' stops at block signal %d for at least %.0f seconds after driving for %.0f seconds", 
+                FRA = "Le train '%s' s'arrête au signal de canton %d pendant au moins %.0f secondes après avoir roulé pendant %.0f secondes", 
+              }, trainName, b, stopTime, driveTime )
+            )
+            
           end  
           Train.enterBlockCycle = nil
         end
       
         -- A train stopped at a block but somehow the enter block event was not captured
-        if not Block.occupied then  
-          printLog(1, prefix, string.format("Train '%s' speed %.2f catched in block %d but no event was triggered", trainName, speed, b))
+        if not Block.occupied then
+        
+          printLog(1, prefix, stringFormat({
+              GER = "Zug '%s' mit Geschwindigkeit %.2f in Block %d gefunden, aber kein Ereignis wurde ausgelöst", 
+              ENG = "Train '%s' speed %.2f catched in block %d but no event was triggered", 
+              FRA = "Le train '%s' à la vitesse %.2f a été intercepté dans le bloc %d mais aucun événement n'a été déclenché", 
+            }, trainName, speed, b )
+          )
+          
           enterBlock( trainName, b )                                -- Let's try to fix it
         end
         
@@ -1371,7 +2014,14 @@ local function run ()
         and not prevTrackTrainName                                    -- and all previous tracks are now free
         and firstTrackTrainName                                       -- and the first track of the block is now occupied 
         and Block.prevTrackTrainNameOld ==  firstTrackTrainName then  -- and the trains are identical
-        printLog(1, prefix, "Check tracks: Train "..firstTrackTrainName.." enters block "..b)
+        
+        printLog(1, prefix, stringFormat({
+            GER = "Gleise prüfen: Zug '%s' fährt in Block %d ein",
+            ENG = "Check tracks: Train '%s' enters block %d",
+            FRA = "Vérifiez les voies: Le train '%s' entre dans le bloc %d",
+          }, firstTrackTrainName, b )
+        )
+        
         enterBlock( firstTrackTrainName, b )
       end  
       
@@ -1396,7 +2046,14 @@ local function run ()
         and not lastTrackTrainName                                    -- and it's not occupied anymore
         and nextTrackTrainName                                        -- and one of the next tracks is now occupied
         and Block.lastTrackTrainNameOld ==  nextTrackTrainName then   -- and the trains are identical
-        printLog(1, prefix, "Check tracks: Train "..nextTrackTrainName.." leaves block "..b)
+        
+        printLog(1, prefix, stringFormat({
+            GER = "Gleise prüfen: Zug '%s' verlässt Block %d",
+            ENG = "Check tracks: Train '%s' leaves block %d",
+            FRA = "Vérifiez les voies: Le train '%s' quitte le bloc %d",
+          }, nextTrackTrainName, b )
+        )
+        
         leaveBlock( nextTrackTrainName, b )
       end 
      
@@ -1412,12 +2069,23 @@ local function run ()
     if not Block.occupied and Block.occupiedOld then            -- A train released this block
       Block.occupiedOld = Block.occupied                        -- Set block memory old to 'free', now this 'if' statement won't run again
 
-      printLog(1,
-        prefix
-        ,"Train '",Train.name
-        ,"' releases block ",b
-        ,(Block.twoWayBlock and Block.twoWayBlock > 0 and " and twin block " .. Block.twoWayBlock or "")
-        ," and continues on path ",table.concat((Train.path or {}), ", ")
+      printLog(1, prefix, stringFormat({
+            GER = "Zug '%s' gibt Block %d frei",
+            ENG = "Train '%s' releases block %d",
+            FRA = "Le train '%s' libère le bloc %d",
+          }, Train.name, b )
+        ,(Block.twoWayBlock and Block.twoWayBlock > 0 and 
+            stringFormat({
+                GER = " und Zwillingsblock %d",
+                ENG = " and twin block %d",
+                FRA = " et bloc jumeau %d",
+              }, Block.twoWayBlock ) 
+            or "")
+        , stringFormat({
+              GER = " und fährt weiter auf dem Pfad %s",
+              ENG = " and continues on path %s",
+              FRA = " et continue sur le chemin %s",
+            }, table.concat((Train.path or {}), ", ") )
       )
 
       Train.block = nil                                         -- Set train to be located outside of any block
@@ -1440,14 +2108,26 @@ local function run ()
 
         --assert(Train.allowed, "Block "..b.."\nTrain "..Train.name.."\n"..debug.traceback())
 
-        printLog(1,
-          prefix
-          ,"Train '",Train.name
-          ,"' arrives in block ",b
-          ,(Train.path and " on path "..table.concat(Train.path, ", ") or "")
-          ,(Train.allowed[b] > 1 and " and stays at least for "..Train.allowed[b].." sec" or "")
+        printLog(1, prefix, stringFormat({
+            GER = "Zug '%s' kommt in Block %d an",
+            ENG = "Train '%s' arrives in block %d",
+            FRA = "Le train '%s' arrive dans le bloc %d",
+          }, Train.name, b )
+          ,(Train.path and 
+              stringFormat({
+                  GER = " auf dem Pfad %s",
+                  ENG = " on path %s",
+                  FRA = " sur le chemin %s",
+                }, table.concat(Train.path, ", ")
+              ) or "")
+          ,(Train.allowed[b] > 1 and 
+              stringFormat({
+                  GER = " und bleibt mindestens für %d Sekunden",
+                  ENG = " and stays at least for %d sec",
+                  FRA = " et reste au moins pendant %d sec",
+                }, Train.allowed[b]
+              ) or "")
         )
-
         -- Store current cycle to be able to calculate the drive time between entering the block and stopping at the signal
         Train.enterBlockCycle = cycle
         
@@ -1465,44 +2145,64 @@ local function run ()
           local previousBlock = BlockTab[pb]
 
           if Train.block then                                   -- Is the train still in previous block?
-          check(Train.block == pb, "Error: Current block "..Train.block.." of train '"..Train.name.."' does not match previous block "..pb)
+            check(Train.block == pb, stringFormat({
+                GER = "Fehler: Aktueller Block %d des Zuges '%s' stimmt nicht mit dem vorherigen Block %d überein",
+                ENG = "Error: Current block %d of train '%s' does not match previous block %d",
+                FRA = "Erreur: Le bloc actuel %d du train '%s' ne correspond pas au bloc précédent %d",
+              }, Train.block, Train.name, pb )
+            )
 
-          -- Release previous block
+            -- Release previous block
 
-          printLog(2,
-            prefix
-            ,"Train '",Train.name
-            ,"' releases block ",pb
-            ,(previousBlock.twoWayBlock and previousBlock.twoWayBlock > 0 and " and twin block " .. previousBlock.twoWayBlock or "")
-            ," and continues on path ",table.concat((Train.path or {}), ", ")
-          )
+            printLog(2, prefix, 
+              stringFormat({
+                  GER = "Zug '%s' gibt Block %d frei", 
+                  ENG = "Train '%s' releases block %d", 
+                  FRA = "Le train '%s' libère le bloc %d", 
+                }, Train.name, pb ),
+              ( previousBlock.twoWayBlock and previousBlock.twoWayBlock > 0 
+                  and stringFormat({
+                          GER = " und Zwillingsblock %d",
+                          ENG = " and twin block %d",
+                          FRA = " et bloc jumeau %d",
+                        }, previousBlock.twoWayBlock ) 
+                  or ""
+              ),
+              stringFormat({
+                  GER = " und weiter auf dem Pfad %s",
+                  ENG = " and continues on path %s",
+                  FRA = " et continue sur le chemin %s",
+                }, table.concat((Train.path or {}), ", ")
+              )
+            )
 
-          previousBlock.occupied = nil                         -- Free previous block to react on new trains entering this block
-          previousBlock.occupiedOld = nil
+            previousBlock.occupied = nil                         -- Free previous block to react on new trains entering this block
+            previousBlock.occupiedOld = nil
 
-          previousBlock.reserved = nil                         -- Set previous block to 'free'
-          local twoWayBlock = (previousBlock.twoWayBlock and BlockTab[ previousBlock.twoWayBlock ] or nil)
-          if twoWayBlock then twoWayBlock.reserved = nil end   -- Also the two way twin block is now 'free'
+            previousBlock.reserved = nil                         -- Set previous block to 'free'
+            local twoWayBlock = (previousBlock.twoWayBlock and BlockTab[ previousBlock.twoWayBlock ] or nil)
+            if twoWayBlock then twoWayBlock.reserved = nil end   -- Also the two way twin block is now 'free'
 
-          local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
-          printLog(2, prefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error"))
+            local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
+            printLog(2, prefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error") )
 
           else
-          printLog(2,
-            prefix
-            ,"Previous block ",pb
-            ," of train '",Train.name
-            ," on path ",table.concat((Train.path or {}), ", ")
-            ,"' is already released"
-          )
+            printLog(2, prefix, stringFormat({
+                GER = "Der vorherige Block %d des Zuges '%s auf dem Pfad %s ist bereits freigegeben",
+                ENG = "Previous block %d of train '%s on path %s is already released",
+                FRA = "Le bloc %d précédent du train '%s sur le chemin %s est déjà libéré",
+              }, pb, Train.name, table.concat((Train.path or {}), ", ") )
+            )
           
           end
 
           -- Release previous turnouts
 
-            printLog(2,
-              prefix
-              ,"Search route from block ",pb," to block ",b," to release turnout"
+            printLog(2, prefix, stringFormat({
+                GER = "Suche Route von Block %d nach Block %d zur Freigabe der Weichen",
+                ENG = "Search route from block %d to block %d to release turnouts",
+                FRA = "Recherche d'un itinéraire du bloc %d au bloc %d pour libérer les aiguillages",
+              }, pb, b )  
             )
             
           local turn = nil                                      -- Search route to release the turnouts
@@ -1520,12 +2220,13 @@ local function run ()
               TurnReserved[ switch ] = false                    -- Release the turnouts of the current route
               table.insert(turnouts, switch)
             end
-            printLog(2,
-              prefix
-              ,"Train '",Train.name,"'"
-              ," in block ",b
-              ," releases turnouts ",table.concat(turnouts,", ")
+            printLog(2, prefix, stringFormat({
+                GER = "Zug '%s' in Block %d gibt Weichen %s frei",
+                ENG = "Train '%s' in block %d releases turnouts %s",
+                FRA = "Train '%s' dans le bloc %d libère les aiguillages %s",
+              }, Train.name, b, table.concat(turnouts,", ") )
             )
+            
           end
 
           -- Process current path
@@ -1534,22 +2235,24 @@ local function run ()
 
           if #Train.path < 2 then
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
-            printLog(2,
-              prefix
-              ,"Train '",Train.name
-              ,"' finishes the path and requests a new path from block ",b
+            printLog(2, prefix, stringFormat({
+                GER = "Zug '%s' beendet den Pfad und fordert einen neuen Pfad von Block %d an",
+                ENG = "Train '%s' finishes the path and requests a new path from block %d",
+                FRA = "Le train '%s' termine le chemin et demande un nouveau chemin à partir du bloc %d",
+              }, Train.name, b )
             )
           else
-            printLog(2,
-              prefix
-              ,"Train '",Train.name
-              ,"' continues travelling on path ",table.concat((Train.path or {}), ", ")
+            printLog(2, prefix, stringFormat({
+                GER = "Zug '%s' fährt weiter auf Pfad %s",
+                ENG = "Train '%s' continues travelling on path %s",
+                FRA = "Le train '%s' continue de circuler sur le chemin %s",
+              }, Train.name, table.concat((Train.path or {}), ", ") )
             )
           end
 
         else -- no train path yet
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
-            --printLog(2, prefix,"Train '",Train.name,"' requests a new path from block ",b )
+            printLog(3, prefix, "Train '",Train.name,"' requests a new path from block ",b )
         end
 
         -- Update train data
@@ -1575,10 +2278,27 @@ local function run ()
     if Train and Train ~= DummyTrain then                         -- A real train...
       if Block.request and Block.stopTimer == 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
-          printLog(2, prefix,"Train '",Train.name,"' searches a new path from block ",b )
+          printLog(2, prefix, stringFormat({
+              GER = "Zug '%s' sucht einen neuen Pfad ab Block %d",
+              ENG = "Train '%s' searches a new path from block %d",
+              FRA = "Le train '%s' recherche un nouveau chemin à partir du bloc %d",
+            }, Train.name, b ) 
+          )
           
-          check(b>0, "Error: Make list of paths: block b="..b)
-          check(type(pathTab[b])=="table", "Error: Make list of paths: type(pathTab["..b.."])="..type(pathTab[b]))
+          check(b>0, stringFormat({
+              GER = "Fehler: Liste der Pfade erstellen: Block b=%d",
+              ENG = "Error: Make list of paths: block b=%d",
+              FRA = "Erreur: Faire la liste des chemins: bloc b=%d",
+            }, b )
+          )
+          
+          
+          check(type(pathTab[b])=="table", stringFormat({
+              GER = "Fehler: Liste der Pfade erstellen: type(pathTab[%d])=%s",
+              ENG = "Error: Make list of paths: type(pathTab[%d])=%s",
+              FRA = "Erreur: Faire la liste des chemins: type(pathTab[%d])=%s",
+            }, b, type(pathTab[b]) )
+          )
 
           local trainHasAvailablePath = false                     -- Consistency check: Does the train has any available path?
 
@@ -1625,18 +2345,24 @@ local function run ()
               trainHasAvailablePath = trainHasAvailablePath or pathIsAvailable
 
               if freePath then                                      -- Is it a free path?
-                printLog(2,
-                  prefix
-                  ,"Train '",Train.name,"'"
-                  ,"has a free path from block ",b
-                  ," on path ",table.concat(Path,", ")
+                printLog(2, prefix, stringFormat({
+                    GER = "Zug '%s' hat einen freien Pfad von Block %d auf Pfad %s",
+                    ENG = "Train '%s' has a free path from block %d on path %s",
+                    FRA = "Le train '%s' a un chemin libre à partir du bloc %d sur le chemin %s",
+                  }, Train.name, b, table.concat(Path,", ") )
                 )
+                
                 table.insert(availablePath, { Train, b, Path })     -- Store the tuple
               end
             end
           end
           
-          check( trainHasAvailablePath, "Error: No available path for train '"..Train.name.."' in block ",b )
+          check( trainHasAvailablePath, stringFormat({ 
+              GER = "Fehler: Kein verfügbarer Pfad für Zug '%s' in Block %d",
+              ENG = "Error: No available path for train '%s' in block %d",
+              FRA = "Erreur: Aucun chemin disponible pour le train '%s' dans le bloc %d",
+            }, Train.name, b )
+          )
 
         end
       end
@@ -1652,24 +2378,35 @@ local function run ()
     return -- Quit because no new path is activated
 
   elseif #availablePath > 0 then                                  -- At least one path is available
-    printLog(2, prefix, "Count of available paths: ", #availablePath)
+    printLog(2, prefix, stringFormat({
+        GER = "Anzahl der verfügbaren Pfade: %d", 
+        ENG = "Count of available paths: %d", 
+        FRA = "Nombre de chemins disponibles: %d", 
+      }, #availablePath )
+    )
 
     local nr = math.random(#availablePath)                        -- A new path is randomly selected
     local Train, b, Path = table.unpack(availablePath[nr])        -- Get the path
-    check( b == Path[1], "Error while selecting a new path: mismatch between current block "..b.." and selected path "..table.concat(Path, ", "))
+    
+    check( b == Path[1], stringFormat({
+        GER = "Fehler bei der Auswahl eines neuen Pfads: Unstimmigkeit zwischen dem aktuellen Block %d und dem ausgewählten Pfad %s",
+        ENG = "Error while selecting a new path: mismatch between current block %d and selected path %s",
+        FRA = "Erreur lors de la sélection d'un nouveau chemin: inadéquation entre le bloc actuel %d et le chemin sélectionné %s",
+      }, b, table.concat(Path, ", ") )
+    )
 
     Train.path = {}                                               -- Copy path into the train.
     for k=1, #Path do                                             -- Will be used to unlock blocks and turnouts on the go.
       table.insert(Train.path, Path[k])                           -- It's neccesary to copy the path to be able to remove data from it while travelling.
     end
 
-    printLog(1,
-      prefix
-      ,"Train '",Train.name,"'"
-      ," travels from block ",b
-      ," on path ",table.concat(Train.path, ", ")
+    printLog(1, prefix, stringFormat({
+        GER = "Der Zug '%s' fährt von Block %d auf dem Pfad %s",
+        ENG = "Train '%s' travels from block %d on path %s",
+        FRA = "Le train '%s' part du bloc %d et emprunte le chemin %s",
+      }, Train.name, b, table.concat(Train.path, ", ") )
     )
-
+    
     local Block = BlockTab[b]
     Block.request = nil                                           -- New path is allocated, reset the request for a new path
 
@@ -1686,7 +2423,7 @@ local function run ()
       if twoWayBlock then twoWayBlock.reserved = DummyTrain end   -- Also reserve the two way twin block with the dummy train
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
-      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error"))
+      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
 
       if k > 1 then
       for r, Route in pairs(routeTab) do                          -- Search in all routes
@@ -1702,28 +2439,69 @@ local function run ()
           end
 
           if Route.reverse then                                   -- Does the train has to reverse its direction to start the path?
-            check(k == 2, string.format("Error during reversing train direction: Route from %d to %d is not the first part (%d) of the path %s", 
-              fromBlock, 
-              toBlock, 
-              k, 
-              table.concat(Train.path, " ")) 
+            check(k == 2, stringFormat({
+                GER = "Fehler beim Umkehren der Zugrichtung: Strecke von %d nach %d ist nicht der erste Teil (%d) des Pfades %s", 
+                ENG = "Error during reversing train direction: Route from %d to %d is not the first part (%d) of the path %s", 
+                FRA = "Erreur lors de l'inversion du sens du train: L'itinéraire de %d à %d n'est pas la première partie (%d) du chemin %s", 
+              }, fromBlock, toBlock, k,table.concat(Train.path, " ") ) 
             )
+            
             if not Train.speed then 
-              print("Error during reversing train direction: Train '"..Train.name.."' has no stored speed")
+              print(stringFormat({
+                  GER = "Fehler beim Umkehren der Zugrichtung: Zug '%s' hat keine gespeicherte Geschwindigkeit",
+                  ENG = "Error during reversing train direction: Train '%s' has no stored speed",
+                  FRA = "Erreur lors de l'inversion du sens du train: Le train '%s' n'a pas de vitesse enregistrée",
+                }, Train.name )
+              )
+
               local ok, speed = EEPGetTrainSpeed( Train.name )    -- Useless if the value is zero
-              check(ok, "Error during reversing train direction: could not get train speed for train '"..Train.name.."'")
-              check(speed ~= 0, "Error during reversing train direction: Train '"..Train.name.."' has stopped which leads to unknown direction")
+
+              check(ok, stringFormat({
+                  GER = "Fehler beim Umkehren der Zugrichtung: Geschwindigkeit des Zuges '%s' konnte nicht ermittelt werden",
+                  ENG = "Error during reversing train direction: could not get train speed for train '%s'",
+                  FRA = "Erreur lors de l'inversion de la direction du train: impossible d'obtenir la vitesse du train '%s'",
+                }, Train.name )
+              )
+
+              check(speed ~= 0, stringFormat({
+                  GER = "Fehler beim Umkehren der Zugrichtung: Zug '%s' hat angehalten und hat daher eine unbekannte Richtung",
+                  ENG = "Error during reversing train direction: Train '%s' has stopped and therefore has an unknown direction",
+                  FRA = "Erreur lors de l'inversion de la direction du train: le train '%s' s'est arrêté et a donc une direction inconnue",
+                }, Train.name )
+              )
+
               Train.speed = speed
               printLog(3, "C speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
             end
+
             if not Train.targetSpeed then 
-              print("Error during reversing train direction: Train '"..Train.name.."' does not have a target speed to reverse the direction")
+              print(stringFormat({
+                  GER = "Fehler beim Umkehren der Zugrichtung: Der Zug '%s' hat keine Zielgeschwindigkeit für die Richtungsumkehr",
+                  ENG = "Error during reversing train direction: Train '%s' does not have a target speed to reverse the direction",
+                  FRA = "Erreur lors de l'inversion de la direction du train: Le train '%s' n'a pas de vitesse cible pour inverser le sens de marche",
+                }, Train.name )
+              )
+              
               Train.targetSpeed = Train.speed
             end
+
             local newSpeed = Train.targetSpeed * (Train.speed >= 0 and -1 or 1)  -- Reverse speed
             local ok = EEPSetTrainSpeed( Train.name, newSpeed )
-            check(ok, "Error during reversing train direction: could not set train speed for train '"..Train.name.."'")
-            printLog(2, prefix, string.format("Reverse speed of train '%s' from %.1f to %.1f km/h", Train.name, Train.speed, newSpeed ))
+
+            check(ok, stringFormat({
+                GER = "Fehler beim Umkehren der Zugrichtung: Zuggeschwindigkeit für Zug '%s' konnte nicht eingestellt werden",
+                ENG = "Error during reversing train direction: could not set train speed for train '%s'",
+                FRA = "Erreur lors de l'inversion de la direction du train: Impossible de définir la vitesse du train '%s'",
+              }, Train.name )
+            )
+
+            printLog(1, prefix, stringFormat({
+                GER = "Geschwindigkeit des Zuges '%s' von %.1f auf %.1f km/h umkehren", 
+                ENG = "Reverse speed of train '%s' from %.1f to %.1f km/h", 
+                FRA = "Inversion de la vitesse du train '%s' de %.1f à %.1f km/h", 
+              }, Train.name, Train.speed, newSpeed )
+            )
+            
           end
 
           break                                                   -- Use the first found route between both blocks
@@ -1734,11 +2512,11 @@ local function run ()
     end
     end
 
-    printLog(2,
-      prefix
-      ,"Train '",Train.name,"'"
-      ," in block ",b
-      ," locks and sets turnouts ",table.concat(turnouts,", ")
+    printLog(2, prefix, stringFormat({
+        GER = "Zug '%s' in Block %d sperrt und stellt Weichen %s",
+        ENG = "Train '%s' in block %d locks and sets turnouts %s",
+        FRA = "Le train '%s' du bloc %d verrouille et active les aiguillages %s",
+      }, Train.name, b, table.concat(turnouts,", ") )
     )
 
   end
@@ -1749,9 +2527,21 @@ local function run ()
   if runtime.min > tdiff then runtime.min = tdiff end 
   if runtime.max < tdiff then runtime.max = tdiff end 
   if tdiff > 0.1 then 
-    printLog(1, prefix, string.format("High run time: %.3f sec", tdiff))
+    printLog(1, prefix, stringFormat({
+        GER = "Hohe Laufzeit: %.3f sec", 
+        ENG = "High run time: %.3f sec", 
+        FRA = "Temps de fonctionnement élevé: %.3f sec", 
+      }, tdiff )
+    )
+    
   elseif tdiff > 0.01 then  
-    printLog(2, prefix, string.format("Run time: %.3f sec", tdiff))
+    printLog(2, prefix, stringFormat({
+        GER = "Laufzeit: %.3f sec", 
+        ENG = "Run time: %.3f sec", 
+        FRA = "Temps de fonctionnement: %.3f sec", 
+      }, tdiff)
+    )
+    
   end  
 
   return
@@ -1788,29 +2578,55 @@ enterBlock = function (trainName, b)              -- (The local variable 'enterB
     
       -- Consistency checks
       if path[1] and path[2] then                 -- The train has a path 
-        check(b == path[2], string.format("Train '%s' enters block %d but was expected to enter block %d", trainName, b, path[2]))
+        check(b == path[2], stringFormat({
+            GER = "Zug '%s' fährt in Block %d ein, sollte aber in Block %d einfahren", 
+            ENG = "Train '%s' enters block %d but was expected to enter block %d", 
+            FRA = "Le train '%s' entre dans le bloc %d mais était censé entrer dans le bloc %d", 
+          }, trainName, b, path[2] )
+        )
         
       elseif path[1] and not path[2] then         -- The stopped train was catched by a block signal earlier
 
         if b == path[1] then
-          printLog(2, string.format("Train '%s' re-enters block %d (event is ignored)", trainName, b))
+          printLog(2, stringFormat({
+              GER = "Zug '%s' betritt erneut den Block %d (Ereignis wird ignoriert)", 
+              ENG = "Train '%s' re-enters block %d (event is ignored)", 
+              FRA = "Le train '%s' rentre dans le bloc %d (l'événement est ignoré)", 
+            }, trainName, b )
+          )
+          
           return                                  -- No need to enter the block again
 
         else
-          printLog(1, string.format("Train '%s' re-enters block %d but was expected to re-enter block %d", trainName, b, path[1]))
+          printLog(1, stringFormat({
+              GER = "Zug '%s' fährt wieder in Block %d ein, aber es wurde erwartet, dass er wieder in Block %d einfährt", 
+              ENG = "Train '%s' re-enters block %d but was expected to re-enter block %d", 
+              FRA = "Le train '%s' réintègre le bloc %d mais il était prévu qu'il réintègre le bloc %d", 
+            }, trainName, b, path[1] )
+          )
 
         end        
 
       elseif not path[1] then                     -- The train does not have a path
-        print(string.format("Train '%s' enters block %d but does not follow a path", trainName, b))                                         
+        print(stringFormat({
+            GER = "Zug '%s' fährt in Block %d ein, folgt aber keinem Pfad", 
+            ENG = "Train '%s' enters block %d but does not follow a path", 
+            FRA = "Le train '%s' entre dans le bloc %d mais ne suit pas un chemin", 
+          }, trainName, b )
+        )                                         
         
       end
       
-      printLog(2, string.format("Train '%s' enters block %d", trainName, b))
+      printLog(2, stringFormat({
+          GER = "Zug '%s' fährt in Block %d ein", 
+          ENG = "Train '%s' enters block %d", 
+          FRA = "Le train '%s' entre dans le bloc %d", 
+        }, trainName, b )
+      )
       
     --elseif path[2] > 0 then
     --  b = path[2]
-    --  printLog(2, string.format("Train '%s' enters block %d via unspecific enterBlock function", trainName, b))
+    --  printLog(3, string.format("Train '%s' enters block %d via unspecific enterBlock function", trainName, b))
     --end
   end  
 
@@ -1837,20 +2653,41 @@ leaveBlock = function (trainName, b)              -- (The local variable 'leaveB
     
       -- Consistency checks
       if path[1] and path[2] then                 -- The train has a path 
-        check(b == path[1], string.format("Train '%s' leaves block %d but was expected to leave block %d", trainName, b, path[1]))
-        printLog(2, string.format("Train '%s' leaves block %d", trainName, b))
+        check(b == path[1], stringFormat({
+            GER = "Zug '%s' verlässt den Block %d, sollte aber den Block %d verlassen", 
+            ENG = "Train '%s' leaves block %d but was expected to leave block %d", 
+            FRA = "Le train '%s' quitte le bloc %d mais était censé quitter le bloc %d", 
+          }, trainName, b, path[1] )
+        )
+        
+        printLog(2, stringFormat({
+            GER = "Zug '%s' verlässt Block %d", 
+            ENG = "Train '%s' leaves block %d", 
+            FRA = "Le train '%s' quitte le bloc %d", 
+          }, trainName, b )
+        )
 
       elseif path[1] and not path[2] then          -- Weird situation should not happen
-        print(string.format("Train '%s' leaves block %d but has an incomplete path", trainName, b))                                         
+        print(stringFormat({
+            GER = "Zug '%s' verlässt Block %d, hat aber einen unvollständigen Pfad", 
+            ENG = "Train '%s' leaves block %d but has an incomplete path", 
+            FRA = "Le train '%s' quitte le bloc %d mais a un chemin incomplet", 
+          }, trainName, b )
+        )                                         
 
       elseif not path[1] then                      -- The train does not have a path
-        print(string.format("Train '%s' leaves block %d but does not follow a path", trainName, b))                                         
+        print(stringFormat({
+            GER = "Zug '%s' verlässt Block %d, folgt aber keinem Pfad", 
+            ENG = "Train '%s' leaves block %d but does not follow a path", 
+            FRA = "Le train '%s' quitte le bloc %d mais ne suit pas un chemin", 
+          }, trainName, b )
+        )                                         
         
       end
       
     --elseif path[1] > 0 then
     --  b = path[1]
-    --  printLog(2, string.format("Train '%s' leaves block %d via unspecific leaveBlock function", trainName, b))
+    --  printLog(3, string.format("Train '%s' leaves block %d via unspecific leaveBlock function", trainName, b))
     --end
     
   end 
