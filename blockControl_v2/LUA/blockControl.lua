@@ -29,8 +29,8 @@ Version history:
 2.1.0   06.05.2022
 - New sub-version because of new demo layout showing double slip turnouts
 - Use third parameter of functions EEPSetSignal and EEPSetSwitch always to allow users to work with EEPOn functions.
-- Try to catch stopped trains in blocks even if no enter block event was triggered
 - Improved error messages in case of incomplete data (function assert is not used anymore)
+- Try to catch stopped trains in blocks even if no enter block event was triggered
 - Show run time statistics in function printStatus
 
 2.2.0   05.06.2022
@@ -48,12 +48,12 @@ Version history:
 - New sub-version because of new EEP installer and rearranged documentation
 - Minor fixes
 
-2.3.1   30.06.2022
+2.3.1   03.07.2022
 - Translated texts (GER, ENG, FRA)
 
 --]] 
 
-local _VERSION = 'v2.3.1 - 30.06.2022'
+local _VERSION = 'v2.3.1 - 03.07.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -68,12 +68,12 @@ local _VERSION = 'v2.3.1 - 30.06.2022'
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 local language = "ENG"
-if EEPLng then       -- Variable EEPLng showing the installed language version of EEP is available as of EEP 17 only
-  language = EEPLng
+if EEPLng then
+  language = EEPLng                       -- Variable EEPLng showing the installed language version of EEP is available as of EEP 17 only
 else
-
-  -- Read file eep.lng to identify the installed language
-  local filename = "eep.lng"
+  
+  local filename = "eep.lng"              -- Read file eep.lng to identify the installed language
+  
   local file = io.open(filename, "r") 
   if file then
     --local section
@@ -259,7 +259,7 @@ local function storeTrainData( trainName, data )
         printLog(2, stringFormat({
             GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
             ENG = "Store data for train '%s' in slot %d: %s", 
-            FRA = "Stocker les données du train '%s' dans le slot %d: %s", 
+            FRA = "Stocker les données du train '%s' dans l'emplacement %d: %s", 
           }, trainName, Train.slot, text )
         )
         
@@ -519,7 +519,12 @@ local function copyTwoWayBlocks (twoWayBlocks)
 
   for b, Block in pairs(BlockTab) do
     if Block.twoWayBlock and Block.twoWayBlock > 0 then
-      printLog(3, "Block ",b," has twoWayBlock ",Block.twoWayBlock)
+      printLog(3, stringFormat({
+          GER = "Block %d hat Zwilligsblock %d",
+          ENG = "Block %d has twin block %d",
+          FRA = "Le bloc %d a un bloc jumeau %d",
+        }, b, Block.twoWayBlock)
+      )
     end
   end
 
@@ -921,7 +926,7 @@ end
 local function init ( Options )
 --[[
 Options.logLevel          Log level 0 (default): off, 1: normal, 2: full, 3: extreme
-Options.language          Language GER, ENG (default), FRA
+Options.language          Language GER, ENG, FRA
 
 Options.MAINSW            ID of the main switch (optional)
 
@@ -1232,7 +1237,7 @@ end
 local function set ( Options )
 --[[
 Options.logLevel          Log level 0 (default): off, 1: normal, 2: full, 3: extreme
-Options.language          Language GER, ENG (default), FRA
+Options.language          Language GER, ENG, FRA
 Options.showTippText      Show (true) or hide (false) tipp texts on signals
 Options.start             Set the main signal "green" (true) respective to "red" (false) as soon as find mode is finished
 Options.startAllTrains    Set the train signals of all trains to "green" (true) respective to "red" (false)
@@ -1315,9 +1320,19 @@ local function findTrains ()
       local ok, speed = EEPGetTrainSpeed( trainName )   -- Get current speed
 
       if speed == 0 then 
-        printLog(3, string.format("Train '%s' is located in block %d", trainName, b))
+        printLog(3, stringFormat({
+            GER = "Der Zug '%s' befindet sich in Block %d", 
+            ENG = "Train '%s' is located in block %d", 
+            FRA = "Le train '%s' est situé dans le bloc %d", 
+          }, trainName, b )
+        )
       else
-        printLog(3, string.format("Train '%s' is running in block %d with speed %.1f km/h", trainName, b, speed))
+        printLog(3, stringFormat({
+            GER = "Zug '%s' fährt in Block %d mit Geschwindigkeit %.1f km/h", 
+            ENG = "Train '%s' is running in block %d with speed %.1f km/h", 
+            FRA = "Le train '%s' circule dans le bloc %d à la vitesse de %.1f km/h", 
+          }, trainName, b, speed )
+        )
       end  
 
       local Train = TrainTab[trainName]                 -- Get the train
@@ -1906,10 +1921,11 @@ local function run ()
     local Train = Block.reserved        -- A train or a dummy train has reserved this block (could be nil, then the block is free)
 
     if trainName and trainName ~= "" then 
-      printLog(3, prefix, string.format(
-        "Main loop: Train '%s' in block %d, occupied='%s', reserved='%s'", 
-        trainName, 
-        b,
+      printLog(3, prefix, stringFormat({
+          GER = "Hauptschleife: Zug '%s' in Block %d, belegt='%s', reserviert='%s'",
+          ENG = "Main loop: Train '%s' in block %d, occupied='%s', reserved='%s'",
+          FRA = "Boucle principale: Train '%s' dans le bloc %d, occupé='%s', réservé='%s'",
+        }, trainName, b,
         Block.occupied and Block.occupied      or "NIL",
         Block.reserved and Block.reserved.name or "NIL"
       ))
@@ -2252,7 +2268,12 @@ local function run ()
 
         else -- no train path yet
             Block.request = Train                               -- Flag is raised that the train in block b requests a new path
-            printLog(3, prefix, "Train '",Train.name,"' requests a new path from block ",b )
+            printLog(3, prefix, stringFormat({
+                GER = "Zug '%s' beantragt einen neuen Pfad von Block %d", 
+                ENG = "Train '%s' requests a new path from block %d", 
+                FRA = "Le train '%s' demande un nouveau chemin à partir du bloc %d", 
+              }, Train.name, b )
+            )
         end
 
         -- Update train data
@@ -2630,10 +2651,11 @@ enterBlock = function (trainName, b)              -- (The local variable 'enterB
     --end
   end  
 
-  printLog(3, string.format(
-    "enter block: Train '%s' enters block %d, occupied='%s', reserved='%s'", 
-    trainName, 
-    b,
+  printLog(3, stringFormat({
+      GER = "enterBlock: Zug '%s' fährt in Block %d ein, belegt='%s', reserviert='%s'", 
+      ENG = "enterBlock: Train '%s' enters block %d, occupied='%s', reserved='%s'", 
+      FRA = "enterBlock: Le train '%s' entre dans le bloc %d, occupé='%s', réservé='%s'", 
+    }, trainName, b,
     BlockTab[b].occupied and BlockTab[b].occupied      or "NIL",
     BlockTab[b].reserved and BlockTab[b].reserved.name or "NIL"
   ))
@@ -2692,10 +2714,11 @@ leaveBlock = function (trainName, b)              -- (The local variable 'leaveB
     
   end 
   
-  printLog(3, string.format(
-    "leave block: Train '%s' leaves block %d, occupied='%s', reserved='%s'", 
-    trainName, 
-    b,
+  printLog(3, stringFormat({
+      GER = "leaveBlock: Zug '%s' verlässt Block %d, belegt='%s', reserviert='%s'", 
+      ENG = "leaveBlock: Train '%s' leaves block %d, occupied='%s', reserved='%s'", 
+      FRA = "leaveBlock: Le train '%s' quitte le bloc %d, occupé='%s', réservé='%s'", 
+    }, trainName, b,
     BlockTab[b].occupied and BlockTab[b].occupied      or "NIL",
     BlockTab[b].reserved and BlockTab[b].reserved.name or "NIL"
   ))

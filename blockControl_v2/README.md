@@ -14,7 +14,7 @@ You can download version 2 of the EEP Lua Automatic Traffic Control Project here
 
 The EEP folder contains several working EEP demo layouts with the Lua code and the layout definition included.
 
-The `LUA` folder contains the `blockControl` module.
+The `LUA` folder contains the `blockControl` module and template files, which you can use as a starting point to develop your own Lua ATC scripts.
 
 The `GBS` folder contains files with the track view consoles, which are inserted into the demo layouts as well.
 Near the start/stop signal you find the train signals. These signals can also be used in automatic operation.
@@ -69,6 +69,14 @@ One of the new features in v2.2 is the way trains can be reversed. There’s no 
 - [Automatic Train Traffic on any EEP Layout v2.2 - 08](https://www.youtube.com/watch?v=YdrGc5KIsmM&ab_channel=Rudyshobbychannel)  
 Automatic Train Control version 2.2 has the feature of being able to reverse trains without using any track sensors, Lua takes care of the reversal. This makes it possible to reverse a train on any block, not only on dead ends. The block need not even be a two-way block, trains can reverse on any block.  
 The Lua ATC Code Generator can not guess our intentions, it will always generate routes without reversals, and reverse trains only in dead ends. When we want a train to reverse on a non dead end block we’ll have to add the routes for this ourselves and specify reverse=true for those routes. If you leave both the forward and the reversal route in the table, the result will be that trains will drive on 50% of the time and reverse the other 50% of the times.
+
+- [Automatic Train Traffic on any EEP Layout v2.3 - 09](https://www.youtube.com/watch?v=KGXL2a99CjM&ab_channel=Rudyshobbychannel)  
+This version is all about making things even easier:  
+There’s the new EEP installer that with two mouse clicks installs the content of the ZIP file.  
+The BetterContacts module is included, courtesy of Benjamin Hogl.  
+There’s a new User Manual that talks us through each and every step from installing the oftware up to driving around automatically.  
+The manual now focuses on using the Lua Code Generator, which takes most work out of ur hands.  
+A new demo layout, Peace River, is included.  
 
 ## Collaboration
 
