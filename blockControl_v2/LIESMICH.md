@@ -14,7 +14,7 @@ Sie können die Version 2 des EEP Lua Automatic Traffic Control Projekts hier he
 
 Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
 
-Der `LUA`-Ordner enthält das `blockControl` Modul.
+Der `LUA`-Ordner enthält das `blockControl` Modul sowie Template-Dateien, die als Ausgangspunkt für die Entwicklung eigener Lua-ATC-Skripte verwendet werden können.
 
 Der `GBS`-Ordner enthält Dateien mit den Gleisbildstellpulten, die auch in die Anlagen eingefügt sind.
 In der Näher des Start/Stopp-Signals befinden sich die Zugsignale. Diese Signale können auch im automatischen Betrieb betätigt werden.
@@ -68,6 +68,15 @@ Eine der neuen Funktionen in v2.2 ist die Art und Weise, wie Züge umgedreht wer
 - [Automatic Train Traffic on any EEP Layout v2.2 - 08](https://www.youtube.com/watch?v=YdrGc5KIsmM&ab_channel=Rudyshobbychannel)  
 Die automatische Zugsteuerung Version 2.2 bietet die Möglichkeit, Züge ohne Gleissensoren umzukehren, Lua übernimmt die Umkehrung. Das macht es möglich, einen Zug an jedem Block umzukehren, nicht nur an Sackgassen. Der Block muss nicht einmal ein Zweiwege-Block sein, Züge können an jedem Block umkehren.  
 Der Lua ATC Code Generator kann unsere Absichten nicht erraten, er wird immer Strecken ohne Umkehrungen generieren, und Züge nur in Sackgassen umkehren lassen. Wenn wir wollen, dass ein Zug in einem Block, der keine Sackgasse ist, rückwärts fährt, müssen wir die Routen dafür selbst hinzufügen und reverse=true für diese Routen angeben. Wenn Sie sowohl die Vorwärts- als auch die Rückwärtsroute in der Tabelle belassen, führt dies dazu, dass die Züge 50 % der Zeit vorwärts fahren und die anderen 50 % der Zeit rückwärts.
+
+- [Automatic Train Traffic on any EEP Layout v2.3 - 09](https://www.youtube.com/watch?v=KGXL2a99CjM&ab_channel=Rudyshobbychannel)  
+Bei dieser Version geht es darum, alles noch einfacher zu machen:  
+Es gibt den neuen EEP-Installer, der mit zwei Mausklicks den Inhalt der ZIP-Datei installiert.  
+Das BetterContacts-Modul ist enthalten, mit freundlicher Genehmigung von Benjamin Hogl.  
+Es gibt ein neues Benutzerhandbuch, das jeden einzelnen Schritt von der Installation der Software bis zum automatischen Fahren erklärt.  
+Der Schwerpunkt des Handbuchs liegt jetzt auf der Verwendung des Lua-Code-Generators, der uns die meiste Arbeit abnimmt.  
+Ein neues Demo-Layout, Peace River, ist enthalten.  
+
 
 ## Zusammenarbeit
 
