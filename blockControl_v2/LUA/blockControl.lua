@@ -51,15 +51,17 @@ Version history:
 2.3.1   03.07.2022
 - Translated texts (GER, ENG, FRA)
 
-2.3.2   08.07.2022
+2.3.2   11.07.2022
 - Option to use a table of allowed blocks tables of trains
 - Option to define a range of random times for allowed blocks of trains
 - Correction for the case of wait times was defined with fractions
-- 'target speed' renamed into 'reversing speed'
+- Variable 'target speed' renamed into 'reversing speed'
+- Reversing twin blocks turn the twin block to green as well (regardless if it's part of the route or not)
+- Store train data in tag text and slot if both stores are available
 
 --]] 
 
-local _VERSION = 'v2.3.2 - 08.07.2022'
+local _VERSION = 'v2.3.2 - 11.07.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -225,8 +227,9 @@ local TrainTab = {}
 -- Store a value or a simple key=value-table for the train
 local reversingRoutesExist
 local function storeTrainData( trainName, data )
+
+  -- Store data in a tag text if possible
   if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
-    -- use a tag text
     local wagonName = getEngine( trainName ) or ""
     local text = serialize( data )
     local ok = EEPRollingstockSetTagText( wagonName, text )
@@ -236,11 +239,13 @@ local function storeTrainData( trainName, data )
         FRA = "Enregistrer le texte de la balise dans le train '%s' wagon '%s' : %s", 
       }, trainName, wagonName, text )
     )
+  end
+  
+  -- Store data in a slot if available
+  local Train = TrainTab[ trainName ]
 
-  else 
-    -- use a data slot
-    local Train = TrainTab[ trainName ]
-    
+  if reversingRoutesExist and not EEPRollingstockSetTagText then
+    -- Show error messages if slots is required
     check(Train, stringFormat({
         GER = "Fehler beim Speichern von Daten: Zug '%s' nicht gefunden", 
         ENG = "Error while storing data: train '%s' not found", 
@@ -248,39 +253,37 @@ local function storeTrainData( trainName, data )
       }, trainName )
     )
     
-    if reversingRoutesExist and not Train.slot then 
-    
+    if not Train.slot or Train.slot == 0 then 
       print(stringFormat({
           GER = "Fehler beim Speichern von Daten: kein Slot für den Zug '%s' definiert", 
           ENG = "Error while storing data: no slot defined for train '%s'", 
           FRA = "Erreur lors de l'enregistrement des données: aucun emplacement défini pour le train '%s'", 
         }, trainName )
       )
-    
     end
-    if Train.slot then 
-      local text = serialize( data )
-      local ok = EEPSaveData( Train.slot or 0, text )
-      if ok then 
-        printLog(2, stringFormat({
-            GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
-            ENG = "Store data for train '%s' in slot %d: %s", 
-            FRA = "Stocker les données du train '%s' dans l'emplacement %d: %s", 
-          }, trainName, Train.slot, text )
-        )
-        
-      else
+  end  
+
+  if Train.slot and Train.slot > 0 then 
+    local text = serialize( data )
+    local ok = EEPSaveData( Train.slot, text )
+    if ok then 
+      printLog(2, stringFormat({
+          GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
+          ENG = "Store data for train '%s' in slot %d: %s", 
+          FRA = "Stocker les données du train '%s' dans l'emplacement %d: %s", 
+        }, trainName, Train.slot, text )
+      )
       
-        print(stringFormat({
-            GER = "Speichern von Daten für Zug '%s' in Slot %d fehlgeschlagen: %s", 
-            ENG = "Storing data for train '%s' in slot %d failed: %s", 
-            FRA = "Le stockage des données pour le train '%s' dans l'emplacement %d a échoué: %s", 
-          }, trainName, Train.slot or 0, text )
-        )
-        
-      end 
-    end    
-  end
+    else
+      print(stringFormat({
+          GER = "Speichern von Daten für Zug '%s' in Slot %d fehlgeschlagen: %s", 
+          ENG = "Storing data for train '%s' in slot %d failed: %s", 
+          FRA = "Le stockage des données pour le train '%s' dans l'emplacement %d a échoué: %s", 
+        }, trainName, Train.slot or 0, text )
+      )
+      
+    end 
+  end    
 end
 
 -- Retrieve a value or a simple key=value-table from a train
@@ -2190,7 +2193,12 @@ local function run ()
 
       Block.stopTimer = 0
 
-      EEPSetSignal( Block.signal, BLKSIGRED, 1 )                -- Set the block signal to RED
+      local ok EEPSetSignal( Block.signal, BLKSIGRED, 1 )       -- Set the block signal to RED
+      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", RED )",(ok == 1 and "" or " error") )
+      
+      if twoWayBlock then                                       -- In case it was an reversing route...
+        EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )        -- ... set the two way twin block signal to RED as well
+      end
     end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -2286,6 +2294,11 @@ local function run ()
 
             local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
             printLog(2, prefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error") )
+
+            if twoWayBlock then                                  -- In case it was an reversing route...
+              EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )   -- ... set the two way twin block signal to RED as well
+              print("Exception: EEPSetSignal( ",twoWayBlock.signal,", BLKSIGRED, 1 )")
+            end
 
           else
             printLog(2, prefix, stringFormat({
@@ -2403,7 +2416,7 @@ local function run ()
     if Train and Train ~= DummyTrain then                         -- A real train...
       if Block.request and Block.stopTimer <= 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
-          printLog(2, prefix, stringFormat({
+          printLog(3, prefix, stringFormat({
               GER = "Zug '%s' sucht einen neuen Pfad ab Block %d",
               ENG = "Train '%s' searches a new path from block %d",
               FRA = "Le train '%s' recherche un nouveau chemin à partir du bloc %d",
@@ -2549,7 +2562,7 @@ local function run ()
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
       printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
-
+ 
       if k > 1 then
       for r, Route in pairs(routeTab) do                          -- Search in all routes
         local fromBlock = Route[1]
@@ -2570,7 +2583,7 @@ local function run ()
                 FRA = "Erreur lors de l'inversion du sens du train: L'itinéraire de %d à %d n'est pas la première partie (%d) du chemin %s", 
               }, fromBlock, toBlock, k,table.concat(Train.path, " ") ) 
             )
-            
+
             if not Train.speed then 
               print(stringFormat({
                   GER = "Fehler beim Umkehren der Zugrichtung: Zug '%s' hat keine gespeicherte Geschwindigkeit",
@@ -2626,6 +2639,11 @@ local function run ()
                 FRA = "Inversion de la vitesse du train '%s' de %.1f à %.1f km/h", 
               }, Train.name, Train.speed, newSpeed )
             )
+
+            if BlockTab[b].twoWayBlock and BlockTab[b].twoWayBlock > 0 then 
+              EEPSetSignal( BlockTab[b].twoWayBlock, BLKSIGGRN, 1 )    -- ... set the two way twin block signal to GREEN as well
+              printLog(3, "Twin two way block ",BlockTab[b].twoWayBlock," set to GREEN")
+            end
             
           end
 

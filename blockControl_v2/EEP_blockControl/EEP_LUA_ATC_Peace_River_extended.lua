@@ -3,33 +3,48 @@
 -- For every block entry sensor enter the following into field 'Lua function' (where ## is the number of the block signal): blockControl.enterBlock_##
 
 -- Allowed blocks with wait time
-CCW_Pass =  { [52]=30, [53]=30, [54]=30, [55]=30, [56]=30, -- depot
-              [82]=30, [83]=30, [84]=30, [85]=30, [86]=30, -- depot, extended
-              [38]=30, [45]= 1,
-              [47]=30, [48]=120,                           -- station mid
-              [50]= 1, [75]=30, [51]= 1, }
-CCW_Cargo = { [52]=30, [53]=30, [54]=30, [55]=30, [56]=30, -- depot
-              [82]=30, [83]=30, [84]=30, [85]=30, [86]=30, -- depot, extended
-              [38]= 1, [45]= 1,
-              [47]= 1, [48]= 1, [49]=120,                  -- station mid
-              [50]= 1, [75]=30, [51]= 1, }
-CW_Pass =   { [57]=90, [58]=90, [59]=90, [60]=90, [61]=90, -- depot
-              [87]=30, [88]=30, [89]=30, [90]=30, [91]=30, -- depot, extended
-              [174]= 1,[65]=120, [62]= 1,
-              [66]=90, [67]=120,                           -- station mid
-              [46]= 1, [74]=30, [63]= 1, }
-CW_Cargo =  { [57]= 1, [58]= 1, [59]= 1, [60]= 1, [61]= 1, -- depot
-              [87]=30, [88]=30, [89]=30, [90]=30, [91]=30, -- depot, extended
-              [174]= 1,[65]= 1, [62]= 1, [72]=30, [73]=30,
-              [77]=120,                                    -- station mid
-              [46]= 1, [74]= 1, [63]= 1, }
-Shuttle_North = { [37]=30, [64]=30, [69]=30, [78]=30, [79]=30, -- shuttle station 
-              -- The following entries allow the train to leave the shuttle station for a CCW run
-              [52]= 1, [53]= 1, [54]= 1, [55]= 1, [56]= 1, -- depot
-              [82]= 1, [83]= 1, [84]= 1, [85]= 1, [86]= 1, -- depot, extended
-              [38]= 1, [45]= 1,
-              [50]= 1, [75]= 1, [51]= 1,
-			}
+local st = { 20, 50 }                          -- short random time between 20 and 50 seconds
+local lt = { 50, 100 }                         -- long random time between 50 and 100 seconds
+
+local CCW_depot = { 
+  [52]=st, [53]=st, [54]=st, [55]=st, [56]=st, -- depot
+  [82]=st, [83]=st, [84]=st, [85]=st, [86]=st, -- depot, extended
+}
+local CCW_Pass = { 
+  CCW_depot,
+  [38]=30, [45]= 1,
+  [47]=30, [48]=120,                           -- station mid
+  [50]= 1, [75]=30, [51]= 1, 
+}
+local CCW_Cargo = { 
+  CCW_depot,
+  [38]= 1, [45]= 1,
+  [47]= 1, [48]= 1, [49]=120,                  -- station mid
+  [50]= 1, [75]=30, [51]= 1, 
+}
+
+local CW_Pass = { 
+  [57]=lt, [58]=lt, [59]=lt, [60]=lt, [61]=lt, -- depot
+  [87]=lt, [88]=lt, [89]=lt, [90]=lt, [91]=lt, -- depot, extended
+  [174]= 1,[65]=120, [62]= 1,
+  [66]=90, [67]=120,                           -- station mid
+  [46]= 1, [74]=30, [63]= 1, 
+}
+local CW_Cargo = { 
+  [57]= 1, [58]= 1, [59]= 1, [60]= 1, [61]= 1, -- depot
+  [87]= 1, [88]= 1, [89]= 1, [90]= 1, [91]= 1, -- depot, extended
+  [174]= 1,[65]= 1, [62]= 1, [72]=30, [73]=30,
+  [77]=120,                                    -- station mid
+  [46]= 1, [74]= 1, [63]= 1, 
+}
+local Shuttle_North = { 
+  [37]=30, [64]=30, [69]=30, [78]=30, [79]=30, -- shuttle station 
+  -- The following entries allow the train to leave the shuttle station for a CCW run
+  [52]= 1, [53]= 1, [54]= 1, [55]= 1, [56]= 1, -- depot
+  [82]= 1, [83]= 1, [84]= 1, [85]= 1, [86]= 1, -- depot, extended
+  [38]= 1, [45]= 1,
+  [50]= 1, [75]= 1, [51]= 1,
+}
 
 local trains = {
 -- No train signals are assigned yet

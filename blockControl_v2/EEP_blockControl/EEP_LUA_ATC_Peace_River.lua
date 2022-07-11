@@ -3,23 +3,35 @@
 -- For every block entry sensor enter the following into field 'Lua function' (where ## is the number of the block signal): blockControl.enterBlock_##
 
 -- Erlaubte Blöcke mit Wartezeit
-CCW_Pass =  { [52]=30, [53]=30, [54]=30, [55]=30, [56]=30, -- depot
-              [38]=30, [45]= 1,
-              [47]=30, [48]=120,                           -- station mid
-              [50]= 1, [75]=30, [51]= 1, }
-CCW_Cargo = { [52]=30, [53]=30, [54]=30, [55]=30, [56]=30, -- depot
-              [38]= 1, [45]= 1,
-              [47]= 1, [48]= 1, [49]=120,                  -- station mid
-              [50]= 1, [75]=30, [51]= 1, }
-CW_Pass =   { [57]=90, [58]=90, [59]=90, [60]=90, [61]=90, -- depot
-              [174]= 1,[65]=120, [62]= 1,
-              [66]=90, [67]=120,                           -- station mid
-              [46]= 1, [74]=30, [63]= 1, }
-CW_Cargo =  { [57]= 1, [58]= 1, [59]= 1, [60]= 1, [61]= 1, -- depot
-              [174]= 1,[65]= 1, [62]= 1, [72]=30, [73]=30,
-              [77]=120,                                    -- station mid
-              [46]= 1, [74]= 1, [63]= 1, }
-Shuttle_North = { [37]=30, [64]=30, [69]=30, [78]=30, [79]=30, }
+local st = { 20, 50 }                          -- short random wait time between 20 and 50 seconds
+local lt = { 60, 100 }                         -- long random wait time between 60 and 100 seconds
+local CCW_Pass = { 
+  [52]=st, [53]=st, [54]=st, [55]=st, [56]=st, -- wait for a short time in the depot
+  [38]=30, [45]= 1,
+  [47]=30, [48]=120,                           -- station mid
+  [50]= 1, [75]=30, [51]= 1, 
+}
+local CCW_Cargo = { 
+  [52]=st, [53]=st, [54]=st, [55]=st, [56]=st, -- wait for a short time in the depot
+  [38]= 1, [45]= 1,
+  [47]= 1, [48]= 1, [49]=120,                  -- station mid
+  [50]= 1, [75]=30, [51]= 1, 
+}
+local CW_Pass =   { 
+  [57]=lt, [58]=lt, [59]=lt, [60]=lt, [61]=lt, -- wait for a longer time in the depot
+  [174]= 1,[65]=120, [62]= 1,
+  [66]=90, [67]=120,                           -- station mid
+  [46]= 1, [74]=30, [63]= 1, 
+}
+local CW_Cargo =  { 
+  [57]= 1, [58]= 1, [59]= 1, [60]= 1, [61]= 1, -- drive throught depot
+  [174]= 1,[65]= 1, [62]= 1, [72]=30, [73]=30,
+  [77]=120,                                    -- station mid
+  [46]= 1, [74]= 1, [63]= 1, 
+}
+local Shuttle_North = { 
+  [37]=30, [64]=30, [69]=30, [78]=30, [79]=30, 
+}
 
 local trains = {
 -- (Slots are only used in EEP below version 14.2)
