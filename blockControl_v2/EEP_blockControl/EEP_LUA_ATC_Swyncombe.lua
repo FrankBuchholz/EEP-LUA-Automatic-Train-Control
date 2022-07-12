@@ -159,7 +159,7 @@ function EEPMain()
 end		
 
 [EEPLuaData]
-DS_1 = "speed=-43.817	"
+DS_1 = "speed=-49.324	"
 DS_2 = "block=45	speed=59.955	"
 DS_3 = "block=40	speed=-34.011	"
 DS_4 = "block=50	speed=-35.969	"
@@ -167,7 +167,7 @@ DS_5 = "block=38	speed=-30.036	"
 DS_6 = "block=47	speed=-32.010	"
 DS_7 = "block=46	speed=-34.028	"
 DS_8 = "block=49	speed=35.978	"
-DS_9 = "speed=30.026	"
-DS_10 = "speed=-7.577	"
+DS_9 = "speed=27.265	"
+DS_10 = "speed=-3.540	"
 DS_11 = "block=35	speed=-34.030	"
 DS_12 = "block=48	speed=-35.987	"

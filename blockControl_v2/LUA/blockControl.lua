@@ -2198,6 +2198,7 @@ local function run ()
       
       if twoWayBlock then                                       -- In case it was an reversing route...
         EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )        -- ... set the two way twin block signal to RED as well
+        printLog(3, "Twin two way block ",twoWayBlock.signal," set to RED")
       end
     end
 
@@ -2297,7 +2298,7 @@ local function run ()
 
             if twoWayBlock then                                  -- In case it was an reversing route...
               EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )   -- ... set the two way twin block signal to RED as well
-              print("Exception: EEPSetSignal( ",twoWayBlock.signal,", BLKSIGRED, 1 )")
+              printLog(3, "Twin two way block ",twoWayBlock.signal," set to RED")
             end
 
           else
@@ -2561,7 +2562,7 @@ local function run ()
       if twoWayBlock then twoWayBlock.reserved = DummyTrain end   -- Also reserve the two way twin block with the dummy train
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
-      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
+      printLog(3, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
  
       if k > 1 then
       for r, Route in pairs(routeTab) do                          -- Search in all routes
