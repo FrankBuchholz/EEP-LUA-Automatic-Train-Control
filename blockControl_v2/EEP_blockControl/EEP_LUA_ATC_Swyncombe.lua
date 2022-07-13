@@ -15,8 +15,8 @@ local mid   = { [35]=20, [36]=20,           [38]=20,                    [41]=20,
 local long  = {          [36]=20,           [38]=20,           [40]=20,                          }
 
 local trains = {
-  { name = "#Long1",  signal = 0, slot = 1,  speed = 50, allowed = { long,  depot, } },
-  { name = "#Long2",  signal = 0, slot = 2,  speed = 60, allowed = { long,  depot, } },
+  { name = "#Long1",  signal = 0, slot = 1,  speed = 55, allowed = { long,  depot, } },
+  { name = "#Long2",  signal = 0, slot = 2,  speed = 55, allowed = { long,  depot, } },
   { name = "#Long3",  signal = 0, slot = 3,  speed = 34, allowed = { long,  depot, } },
   { name = "#Long4",  signal = 0, slot = 4,  speed = 36, allowed = { long,  depot, } },
   { name = "#Mid1",   signal = 0, slot = 5,  speed = 30, allowed = { mid,   depot, } },
@@ -132,7 +132,7 @@ blockControl.init({                 -- Initialize the module
 blockControl.set({
   logLevel        = 1,              -- (Optional) Log level 0 (default): off, 1: normal, 2: full, 3: extreme
   showTippText    = true,           -- (Optional) Show tipp texts true / false (Later you can toggle the visibility of the tipp texts using the main switch.)
-  start           = false,          -- (Optional) Activate / deactivate main signal. Useful to start automatic block control after finding all known trains.
+  start           = true,          -- (Optional) Activate / deactivate main signal. Useful to start automatic block control after finding all known trains.
   startAllTrains  = true,           -- (Optional) Activate / deactivate all train signals
 })
 --]]
@@ -159,15 +159,15 @@ function EEPMain()
 end		
 
 [EEPLuaData]
-DS_1 = "speed=-49.324	"
-DS_2 = "block=45	speed=59.955	"
-DS_3 = "block=40	speed=-34.011	"
-DS_4 = "block=50	speed=-35.969	"
-DS_5 = "block=38	speed=-30.036	"
-DS_6 = "block=47	speed=-32.010	"
-DS_7 = "block=46	speed=-34.028	"
-DS_8 = "block=49	speed=35.978	"
-DS_9 = "speed=27.265	"
-DS_10 = "speed=-3.540	"
-DS_11 = "block=35	speed=-34.030	"
-DS_12 = "block=48	speed=-35.987	"
+DS_1 = "speed=54.971	"
+DS_2 = "speed=-1.839	block=38	"
+DS_3 = "speed=-10.764	block=47	"
+DS_4 = "speed=-14.870	block=49	"
+DS_5 = "speed=30.067	block=36	"
+DS_6 = "speed=11.899	block=41	"
+DS_7 = "speed=-33.948	"
+DS_8 = "speed=36.035	"
+DS_9 = "speed=29.978	block=50	"
+DS_10 = "speed=-32.008	block=45	"
+DS_11 = "speed=34.075	block=51	"
+DS_12 = "speed=-36.004	block=37	"

@@ -51,17 +51,18 @@ Version history:
 2.3.1   03.07.2022
 - Translated texts (GER, ENG, FRA)
 
-2.3.2   11.07.2022
+2.3.2   12.07.2022
 - Option to use a table of allowed blocks tables of trains
 - Option to define a range of random times for allowed blocks of trains
 - Correction for the case of wait times was defined with fractions
 - Variable 'target speed' renamed into 'reversing speed'
 - Reversing twin blocks turn the twin block to green as well (regardless if it's part of the route or not)
 - Store train data in tag text and slot if both stores are available
+- Show missing trains during find mode
 
 --]] 
 
-local _VERSION = 'v2.3.2 - 11.07.2022'
+local _VERSION = 'v2.3.2 - 12.07.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -1444,20 +1445,28 @@ local function findTrains ()
         
         TrainTab[trainName] = Train
         printLog(1, stringFormat({
-            GER = "Neuen Zug '%s' im Block %d mit Umkehrgeschwindigkeit %.1f km/h anlegen", 
-            ENG = "Create new train '%s' in block %d with reversing speed %.1f km/h", 
-            FRA = "Création d'un nouveau train '%s' dans le bloc %d avec la vitesse d'inversion %.1f km/h", 
-          }, trainName, b, Train.reversingSpeed )
+            GER = "Neuen Zug '%s' mit Umkehrgeschwindigkeit %.1f km/h im Block %d anlegen", 
+            ENG = "Create new train with reversing speed %.1f km/h '%s' in block %d", 
+            FRA = "Création d'un nouveau train '%s' avec la vitesse d'inversion %.1f km/h dans le bloc %d", 
+          }, trainName, Train.reversingSpeed, b )
         )
 
       elseif not Train.block then                       -- We can assign the block to a named train.
         if reversingRoutesExist then                    -- The reversing speed is required to reverse trains
           if Train.reversingSpeed ~= 0 then 
+--[[          
             printLog(1, stringFormat({
-                GER = "Zug '%s' gefunden in Block %d mit Umkehrgeschwindigkeit %.1f km/h", 
-                ENG = "Train '%s' found in block %d with reversing speed %.1f km/h", 
-                FRA = "Train '%s' trouvé dans le bloc %d avec une vitesse d'inversion de %.1f km/h", 
-              }, trainName, b, Train.reversingSpeed )
+                GER = "Zug '%s' mit Umkehrgeschwindigkeit %.1f km/h in Block %d gefunden", 
+                ENG = "Train '%s' with reversing speed %.1f km/h found in block %d", 
+                FRA = "Train '%s' avec une vitesse d'inversion de %.1f km/h trouvé dans le bloc %d", 
+              }, trainName, Train.reversingSpeed, b )
+            )
+--]]            
+            printLog(1, stringFormat({
+                GER = "Zug '%s' in Block %d gefunden", 
+                ENG = "Train '%s' found in block %d", 
+                FRA = "Train '%s' trouvé dans le bloc %d", 
+              }, trainName, b )
             )
             
           else  
@@ -1528,6 +1537,22 @@ local function findTrains ()
     end
   end
   printLog(3, "FIND MODE finished ", finished and "yes " or "no ", count)
+
+  if not finished and cycle % 50 == 1 then               -- Do this every 10 seconds, given that EEPMain() runs 5x/s
+    printLog(1, stringFormat({
+        GER = "Der Modus 'Zugsuche' hat bislang %d Züge gefunden. Noch nicht gefundene Züge:",
+        ENG = "The 'Find Train' mode has found %d train so far. Trains not yet found:",
+        FRA = "Le mode 'Trouver des Trains' a trouvé %d train jusqu'à présent. Trains non encore trouvés:",
+      }, count )
+    )
+    for trainName, Train in pairs(TrainTab) do
+      if not Train.block then
+        printLog(1, stringFormat("  %s", trainName ))
+      end
+    end
+    
+  end
+  
   if finished then
     if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
@@ -2034,7 +2059,7 @@ local function run ()
         )
         
 --enterBlock( trainName, b ) --###                               -- Let's try to fix it
-     end 
+      end 
     end      
 
     if trainName and trainName ~= "" then  
@@ -2042,7 +2067,7 @@ local function run ()
       if ok  and math.abs(speed) < 1 then                         -- A train stopped
       
         -- Show the drive time once
-        if Train.enterBlockCycle then
+        if Train and Train.enterBlockCycle then
           local driveTime = ( cycle - Train.enterBlockCycle ) / 5
           local stopTime = math.max( Train.allowed[b] - driveTime, 0 )
           if driveTime > 1 then
