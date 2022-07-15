@@ -51,9 +51,18 @@ Version history:
 2.3.1   03.07.2022
 - Translated texts (GER, ENG, FRA)
 
+2.3.2   12.07.2022
+- Option to use a table of allowed blocks tables of trains
+- Option to define a range of random times for allowed blocks of trains
+- Correction for the case of wait times was defined with fractions
+- Variable 'target speed' renamed into 'reversing speed'
+- Reversing twin blocks turn the twin block to green as well (regardless if it's part of the route or not)
+- Store train data in tag text and slot if both stores are available
+- Show missing trains during find mode
+
 --]] 
 
-local _VERSION = 'v2.3.1 - 03.07.2022'
+local _VERSION = 'v2.3.2 - 12.07.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl
@@ -219,8 +228,9 @@ local TrainTab = {}
 -- Store a value or a simple key=value-table for the train
 local reversingRoutesExist
 local function storeTrainData( trainName, data )
+
+  -- Store data in a tag text if possible
   if EEPRollingstockSetTagText then -- EEP 14.2 Plug-In 2
-    -- use a tag text
     local wagonName = getEngine( trainName ) or ""
     local text = serialize( data )
     local ok = EEPRollingstockSetTagText( wagonName, text )
@@ -230,11 +240,13 @@ local function storeTrainData( trainName, data )
         FRA = "Enregistrer le texte de la balise dans le train '%s' wagon '%s' : %s", 
       }, trainName, wagonName, text )
     )
+  end
+  
+  -- Store data in a slot if available
+  local Train = TrainTab[ trainName ]
 
-  else 
-    -- use a data slot
-    local Train = TrainTab[ trainName ]
-    
+  if reversingRoutesExist and not EEPRollingstockSetTagText then
+    -- Show error messages if slots is required
     check(Train, stringFormat({
         GER = "Fehler beim Speichern von Daten: Zug '%s' nicht gefunden", 
         ENG = "Error while storing data: train '%s' not found", 
@@ -242,39 +254,37 @@ local function storeTrainData( trainName, data )
       }, trainName )
     )
     
-    if reversingRoutesExist and not Train.slot then 
-    
+    if not Train.slot or Train.slot == 0 then 
       print(stringFormat({
           GER = "Fehler beim Speichern von Daten: kein Slot für den Zug '%s' definiert", 
           ENG = "Error while storing data: no slot defined for train '%s'", 
           FRA = "Erreur lors de l'enregistrement des données: aucun emplacement défini pour le train '%s'", 
         }, trainName )
       )
-    
     end
-    if Train.slot then 
-      local text = serialize( data )
-      local ok = EEPSaveData( Train.slot or 0, text )
-      if ok then 
-        printLog(2, stringFormat({
-            GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
-            ENG = "Store data for train '%s' in slot %d: %s", 
-            FRA = "Stocker les données du train '%s' dans l'emplacement %d: %s", 
-          }, trainName, Train.slot, text )
-        )
-        
-      else
+  end  
+
+  if Train.slot and Train.slot > 0 then 
+    local text = serialize( data )
+    local ok = EEPSaveData( Train.slot, text )
+    if ok then 
+      printLog(2, stringFormat({
+          GER = "Daten für Zug '%s' in Slot %d speichern: %s", 
+          ENG = "Store data for train '%s' in slot %d: %s", 
+          FRA = "Stocker les données du train '%s' dans l'emplacement %d: %s", 
+        }, trainName, Train.slot, text )
+      )
       
-        print(stringFormat({
-            GER = "Speichern von Daten für Zug '%s' in Slot %d fehlgeschlagen: %s", 
-            ENG = "Storing data for train '%s' in slot %d failed: %s", 
-            FRA = "Le stockage des données pour le train '%s' dans l'emplacement %d a échoué: %s", 
-          }, trainName, Train.slot or 0, text )
-        )
-        
-      end 
-    end    
-  end
+    else
+      print(stringFormat({
+          GER = "Speichern von Daten für Zug '%s' in Slot %d fehlgeschlagen: %s", 
+          ENG = "Storing data for train '%s' in slot %d failed: %s", 
+          FRA = "Le stockage des données pour le train '%s' dans l'emplacement %d a échoué: %s", 
+        }, trainName, Train.slot or 0, text )
+      )
+      
+    end 
+  end    
 end
 
 -- Retrieve a value or a simple key=value-table from a train
@@ -713,62 +723,139 @@ local function copyTrains (Trains)                -- Copy trains with allowed bl
   
     local trainName = (string.sub(Train.name, 1, 1) == "#" and Train.name or "#"..Train.name) -- Add leading # character to align names with EEP
   
-    if Train.allowed then 
-      for b, waitTime in pairs(Train.allowed) do  -- Collect block numbers
-        collectBlock( b )
-      end
-      for b, _ in pairs(BlockTab) do
-        if not Train.allowed[b] then 
-          Train.allowed[b] = 0                    -- Other blocks are forbidden
-        end  
-        if Train.allowed[b] == true then 
-          Train.allowed[b] = .1                   -- replace true with number
-        end  
+    local allowedBlocks  = {}
+    local waitTimeRanges = {}
+    if Train.allowed then  
+      --[[ Interpret allowed block times by distinguishing a table of tables about allowed blocks from a table describing the random time range for a block
+      A random time range is an array containing two numbers like { 30, 60 } describing the minimul and maximum random time how long a trains stays in a block.
+      Caution: This table is identical to a allowed sub-table for the two blocks 1 and 2 like { [1] = 30 [2] = 60 }. We assume that no such allowed sub-tables are used.
+      Example:
+      local T = {
+          { name = "A1", allowed = { 
+                                      [1] = 30, [2] = 60,                         -- Well-known definition of fixed times
+                                   } },
+          { name = "A2", allowed = { 
+                                      [1] = 30, [2] = {22,33}, [5] = {44,55},     -- New definittion with random time ranges        
+                                   } },
+          { name = "A3", allowed = { 
+                                      { [1] = 30, [2] = {44,55}, },               -- Combination with a table of tables about allowed blocks
+                                      { [3] = 1,  [4] = 1,       },                                      
+                                   } },
+          { name = "A4", allowed = { 
+                                      { [1] = 30, [2] = {44,55}, },               -- Mixed example
+                                      { [3] = 1,  [4] = 1,       },   
+                                        [5] = {44,55},
+                                   } },
+          { name = "E1", allowed = { 
+                                      { [1] = 30, [2] = 60, },                    -- Exception: this nested table is interpreted as [1] = { 30, 60 }
+                                   } }, 
+      }
+      --]]
+      function getBlockTimes(k, v)
+          if type(v) == "number" then
+              allowedBlocks[k] = v                     -- block with fixed time
+              collectBlock( k )
+
+          elseif v == true then
+              allowedBlocks[k] = 0.1                   -- go throught block 
+              collectBlock( k )
+
+          elseif v == false then
+              allowedBlocks[k] = 0                     -- not allowed block
+              collectBlock( k )
+
+          elseif type(v) == "table" then
+              if k and #v == 2 and type(v[1]) == "number" and type(v[2]) == "number" then 
+                  allowedBlocks[k] = (v[1] > 0 and v[1] or v[2])
+                  waitTimeRanges[k] = v                -- block with time range
+                  collectBlock( k )
+
+              else
+                  for k, v in pairs(v) do
+                      getBlockTimes(k, v)
+                  end    
+
+              end    
+          else
+              print(stringFormat( "Error in definition of an allowed block: [%s] = %s", tostring(k), tostring(v) ))
+
+          end    
+      end    
+      getBlockTimes(nil, Train.allowed)
+      
+      for b, waitTimeRange in pairs(waitTimeRanges) do
+        printLog(3, stringFormat({ 
+            GER = "Zug '%s' hat Wartezeitbereich für Block %d von %d bis %d Sek.",  
+            ENG = "Train '%s' has wait time range for block %d from %d to %d sec",  
+            FRA = "Le train '%s' a un temps d'attente pour le bloc %d compris entre %d et %d sec",  
+          }, Train.name, b, math.floor(waitTimeRange[1]), math.floor(waitTimeRange[2]) 
+        ))
       end
       
+      for b, _ in pairs(BlockTab) do
+        if not allowedBlocks[b] then 
+          allowedBlocks[b] = 0                    -- Other blocks are forbidden
+        end  
+      end
+        
     else                                          -- No allowed blocks defined
-      Train.allowed = {}
       for b, Block in pairs(BlockTab) do
-        Train.allowed[b] = .1                     -- Train can go everywhere 
+        allowedBlocks[b] = .1                     -- Train can go everywhere 
       end
     end
+    
     
     if Train.signal == 0 then
       Train.signal = nil
     end
 
     TrainTab[trainName] = {
-      name    = trainName,
-      signal  = Train.signal,                     -- Train signal (optional)
-      allowed = Train.allowed,                    -- Allowed blocks per train
-      block   = nil,                              -- Current block where the train is
+      name            = trainName,
+      signal          = Train.signal,                 -- Train signal (optional)
+      allowed         = allowedBlocks,                -- Allowed blocks per train
+      waitTimeRanges  = waitTimeRanges,          -- Wait time ranges per block
+      block           = nil,                          -- Current block where the train is
       
-      --targetSpeed = targetSpeed,                  -- see below
-      --speed       = speed,                        -- see below
-      slot        = Train.slot,                   -- EEP versions below 14.2 cannot handle tag texts, in this case slots are used 
+      --reversingSpeed   = reversingSpeed,                  -- see below
+      --speed         = speed,                        -- see below
+      slot            = Train.slot,                   -- EEP versions below 14.2 cannot handle tag texts, in this case slots are used 
       
-      visits  = 0,                                -- Statistic counter how often a train visited a block
+      visits          = 0,                                -- Statistic counter how often a train visited a block
     }
 
     -- Get train speed to be able to reverse the direction of a train at a block signal
+    
+--[[ old code    
     local ok, speed
     local data = readTrainData( trainName )
     if type(data) == "table" and data.speed then
-      speed = data.speed
-      printLog(3, "speed found '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+      speed = data.speed                                      -- get stored speed of the train
     else  
-      -- store current speed in the tag text of the train   
-      ok, speed = EEPGetTrainSpeed( trainName )
+      ok, speed = EEPGetTrainSpeed( trainName )               -- get current speed of the train
       if speed ~= 0 then
-        storeTrainData( trainName, { speed = speed } )
+        storeTrainData( trainName, { speed = speed } )        -- store current speed
       end
     end
-    printLog(3, "A speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
+--]]
+         
+    local ok, speed = EEPGetTrainSpeed( trainName )           -- get current speed of the train
+    if speed ~= 0 then
+        storeTrainData( trainName, { speed = speed } )        -- store current speed
+        printLog(3, "Train '",trainName,"' has speed ", speed )
+    else    
+      local data = readTrainData( trainName )                 -- get stored speed of the train
+      if type(data) == "table" and data.speed then
+        speed = data.speed
+        printLog(3, "Train '",trainName,"' stopps and has stored speed ", speed )
+      else  
+        printLog(3, "Train '",trainName,"' stopps but has no stored speed" )
+      end
+    end
 
-    local targetSpeed = (Train.speed and math.abs(Train.speed) or speed)
+    local reversingSpeed = (Train.speed and math.abs(Train.speed) or speed)
 
-    TrainTab[trainName].targetSpeed = targetSpeed    -- The target speed is used to set the speed while reversing the direction of trains
-    TrainTab[trainName].speed       = speed          -- The current speed is used to calculate the sign of the speed while reversing the direction of trains
+    TrainTab[trainName].reversingSpeed = reversingSpeed       -- The reversing speed is used to set the speed while reversing the direction of trains
+    TrainTab[trainName].speed       = speed                   -- The current speed is used to calculate the sign of the speed while reversing the direction of trains
     
   end
 end
@@ -832,10 +919,10 @@ local function printData ()
           FRA = "Du bloc %d au bloc %d via les aiguillages %s",
         }, Route[1], Route[2], table.concat(Route.turn, ", ") ),
       (Route.reverse
-        and stringFormat({
-            GER = " mit Umkehrung der Richtung beim Startlock",
-            ENG = " reverse direction at starting block", 
-            FRA = " averc inversion de la direction au bloc de départ",
+        and " " .. stringFormat({
+            GER = "mit Umkehrung der Richtung beim Startblock",
+            ENG = "reverse direction at starting block", 
+            FRA = "averc inversion de la direction au bloc de départ",
           })
         or ""
       )
@@ -875,36 +962,31 @@ local function printData ()
     local allowedBlocks = ""
     for b, waitTime in pairsByKeys(Train.allowed) do
       if waitTime > 0 then
-        --allowedBlocks = allowedBlocks..(allowedBlocks == "" and "" or ", " ).."["..b.."]="..waitTime
         allowedBlocks = allowedBlocks..(allowedBlocks == "" and "" or ", " )..b
       end  
     end  
-  
     print(
       stringFormat({
           GER = "Zug '%s'", 
           ENG = "Train '%s'", 
           FRA = "Train '%s'", 
         }, Train.name ),
-      ", ",  
       (Train.signal      
-        and stringFormat({
+        and ", " .. stringFormat({
                 GER = "Signal %s",
                 ENG = "Signal %s",
                 FRA = "Signal %s",
               }, Train.signal )
         or ""),
-      ", ",  
-      (Train.targetSpeed 
-        and stringFormat({
-                GER = "Zielgeschwindigkeit %.1f km/h",
-                ENG = "target speed %.1f km/h",
-                FRA = "vitesse cible %.1f km/h",
-              }, Train.targetSpeed )                
+      (Train.reversingSpeed 
+        and ", " .. stringFormat({
+                GER = "Umkehrgeschwindigkeit %.1f km/h",
+                ENG = "reversing speed %.1f km/h",
+                FRA = "vitesse d'inversion %.1f km/h",
+              }, Train.reversingSpeed )                
         or ""),
-      ", ",  
       (Train.speed
-        and stringFormat({
+        and ", " .. stringFormat({
                 GER = "letzte Geschwindigkeit %.1f km/h",
                 ENG = "last speed %.1f km/h",
                 FRA = "dernière vitesse %.1f km/h",
@@ -1338,12 +1420,12 @@ local function findTrains ()
       local Train = TrainTab[trainName]                 -- Get the train
       if not Train then                                 -- Is it a new train?
 
-        local targetSpeed                               -- Get target speed to be able to reverse the direction of the train at a block signal
+        local reversingSpeed                            -- Get reversing speed to be able to reverse the direction of the train at a block signal
         local data = readTrainData( trainName )
         if type(data) == "table" and data.speed then
-          targetSpeed = math.abs(data.speed)
+          reversingSpeed = math.abs(data.speed)
         else
-          targetSpeed = math.abs(speed)
+          reversingSpeed = math.abs(speed)
           -- store current speed in the tag text of the train   
           storeTrainData( trainName, { block = b, speed = speed } )
         end
@@ -1353,7 +1435,7 @@ local function findTrains ()
           allowed = {}, 
           visits = 0, 
 
-          targetSpeed = targetSpeed,                    -- The target speed is used to set speed while reversing the direction of trains
+          reversingSpeed = reversingSpeed,              -- The reversing speed is used to set speed while reversing the direction of trains
           speed   = speed,                              -- The current speed is used to calculate the sign of the speed while reversing the direction of trains          
         }
 
@@ -1363,32 +1445,40 @@ local function findTrains ()
         
         TrainTab[trainName] = Train
         printLog(1, stringFormat({
-            GER = "Neuen Zug '%s' im Block %d mit Zielgeschwindigkeit %.1f km/h anlegen", 
-            ENG = "Create new train '%s' in block %d with target speed %.1f km/h", 
-            FRA = "Création d'un nouveau train '%s' dans le bloc %d avec la vitesse cible %.1f km/h", 
-          }, trainName, b, Train.targetSpeed )
+            GER = "Neuen Zug '%s' mit Umkehrgeschwindigkeit %.1f km/h im Block %d anlegen", 
+            ENG = "Create new train with reversing speed %.1f km/h '%s' in block %d", 
+            FRA = "Création d'un nouveau train '%s' avec la vitesse d'inversion %.1f km/h dans le bloc %d", 
+          }, trainName, Train.reversingSpeed, b )
         )
 
       elseif not Train.block then                       -- We can assign the block to a named train.
-        if reversingRoutesExist then                    -- The target speed is required to reverse trains
-          if Train.targetSpeed ~= 0 then 
+        if reversingRoutesExist then                    -- The reversing speed is required to reverse trains
+          if Train.reversingSpeed ~= 0 then 
+--[[          
             printLog(1, stringFormat({
-                GER = "Zug '%s' gefunden in Block %d mit Zielgeschwindigkeit %.1f km/h", 
-                ENG = "Train '%s' found in block %d with target speed %.1f km/h", 
-                FRA = "Train '%s' trouvé dans le bloc %d avec une vitesse cible de %.1f km/h", 
-              }, trainName, b, Train.targetSpeed )
+                GER = "Zug '%s' mit Umkehrgeschwindigkeit %.1f km/h in Block %d gefunden", 
+                ENG = "Train '%s' with reversing speed %.1f km/h found in block %d", 
+                FRA = "Train '%s' avec une vitesse d'inversion de %.1f km/h trouvé dans le bloc %d", 
+              }, trainName, Train.reversingSpeed, b )
+            )
+--]]            
+            printLog(1, stringFormat({
+                GER = "Zug '%s' in Block %d gefunden", 
+                ENG = "Train '%s' found in block %d", 
+                FRA = "Train '%s' trouvé dans le bloc %d", 
+              }, trainName, b )
             )
             
           else  
             print(stringFormat({
-                GER = "Fehler: Der Zug '%s' in Block %d hat keine Zielgeschwindigkeit", 
-                ENG = "Error: Train '%s' found in block %d has no target speed", 
-                FRA = "Erreur: Le train '%s' trouvé dans le bloc %d n'a pas de vitesse cible", 
+                GER = "Fehler: Der Zug '%s' in Block %d hat keine Umkehrgeschwindigkeit", 
+                ENG = "Error: Train '%s' found in block %d has no reversing speed", 
+                FRA = "Erreur: Le train '%s' trouvé dans le bloc %d n'a pas de vitesse d'inversion", 
               }, trainName, b )
             )
             
           end
-        else                                            -- No need to handle any target speed
+        else                                            -- No need to handle any reversing speed
           printLog(1, stringFormat({
               GER = "Zug '%s' in Block %d gefunden", 
               ENG = "Train '%s' found in block %d", 
@@ -1447,6 +1537,22 @@ local function findTrains ()
     end
   end
   printLog(3, "FIND MODE finished ", finished and "yes " or "no ", count)
+
+  if not finished and cycle % 50 == 1 then               -- Do this every 10 seconds, given that EEPMain() runs 5x/s
+    printLog(1, stringFormat({
+        GER = "Der Modus 'Zugsuche' hat bislang %d Züge gefunden. Noch nicht gefundene Züge:",
+        ENG = "The 'Find Train' mode has found %d train so far. Trains not yet found:",
+        FRA = "Le mode 'Trouver des Trains' a trouvé %d train jusqu'à présent. Trains non encore trouvés:",
+      }, count )
+    )
+    for trainName, Train in pairs(TrainTab) do
+      if not Train.block then
+        printLog(1, stringFormat("  %s", trainName ))
+      end
+    end
+    
+  end
+  
   if finished then
     if not MAINSW or MAINSW == 0 or EEPGetSignal( MAINSW ) == MAINON then
       findMode = false
@@ -1953,7 +2059,7 @@ local function run ()
         )
         
 --enterBlock( trainName, b ) --###                               -- Let's try to fix it
-     end 
+      end 
     end      
 
     if trainName and trainName ~= "" then  
@@ -1961,7 +2067,7 @@ local function run ()
       if ok  and math.abs(speed) < 1 then                         -- A train stopped
       
         -- Show the drive time once
-        if Train.enterBlockCycle then
+        if Train and Train.enterBlockCycle then
           local driveTime = ( cycle - Train.enterBlockCycle ) / 5
           local stopTime = math.max( Train.allowed[b] - driveTime, 0 )
           if driveTime > 1 then
@@ -2112,7 +2218,13 @@ local function run ()
 
       Block.stopTimer = 0
 
-      EEPSetSignal( Block.signal, BLKSIGRED, 1 )                -- Set the block signal to RED
+      local ok EEPSetSignal( Block.signal, BLKSIGRED, 1 )       -- Set the block signal to RED
+      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", RED )",(ok == 1 and "" or " error") )
+      
+      if twoWayBlock then                                       -- In case it was an reversing route...
+        EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )        -- ... set the two way twin block signal to RED as well
+        printLog(3, "Twin two way block ",twoWayBlock.signal," set to RED")
+      end
     end
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -2142,6 +2254,13 @@ local function run ()
                   ENG = " and stays at least for %d sec",
                   FRA = " et reste au moins pendant %d sec",
                 }, Train.allowed[b]
+              ) or "")
+          ,(Train.waitTimeRanges[b] and 
+              stringFormat({
+                  GER = " (Wartezeitbereich von %d bis %d Sekunden)",
+                  ENG = " (Wartezeitbereich von %d bis %d Sekunden)",
+                  FRA = " (Wartezeitbereich von %d bis %d Sekunden)",
+                }, math.floor(Train.waitTimeRanges[b][1]), math.floor(Train.waitTimeRanges[b][2])
               ) or "")
         )
         -- Store current cycle to be able to calculate the drive time between entering the block and stopping at the signal
@@ -2201,6 +2320,11 @@ local function run ()
 
             local ok = EEPSetSignal( previousBlock.signal, BLKSIGRED, 1 )   -- Set the block signal to RED
             printLog(2, prefix, "EEPSetSignal( ",previousBlock.signal,", RED )",(ok == 1 and "" or " error") )
+
+            if twoWayBlock then                                  -- In case it was an reversing route...
+              EEPSetSignal( twoWayBlock.signal, BLKSIGRED, 1 )   -- ... set the two way twin block signal to RED as well
+              printLog(3, "Twin two way block ",twoWayBlock.signal," set to RED")
+            end
 
           else
             printLog(2, prefix, stringFormat({
@@ -2284,8 +2408,27 @@ local function run ()
         Train.visits = Train.visits + 1
         Block.visits = Block.visits + 1
 
-        if Train.allowed[b] > 1 then
-          Block.stopTimer = 5 * Train.allowed[b]                -- Calculate the stop timer in seconds
+        if Train.waitTimeRanges[b] then
+          local waitTimeRange = Train.waitTimeRanges[b]         -- Calculate the stop timer based on a wait time range
+          local waitTime = math.random() * ( waitTimeRange[2] - waitTimeRange[1] ) + waitTimeRange[1] 
+          Block.stopTimer = 5 * waitTime    
+          printLog(2, prefix .. stringFormat({
+              GER = "Zug '%s' in Block %d hat einen Wartezeitbereich von %d bis %d sec und wird für %d sec warten", 
+              ENG = "Train '%s' in block %d has wait time range from %d to %d sec and wil wait for %d sec", 
+              FRA = "Le train '%s' dans le bloc %d a un temps d'attente compris entre %d et %d sec et attendra %d sec", 
+            }, Train.name, b, math.floor( waitTimeRange[1] ), math.floor( waitTimeRange[2] ), math.floor( waitTime )
+          ))
+          
+        elseif Train.allowed[b] > 1 then
+          local waitTime = Train.allowed[b]                     -- Calculate the stop timer based on a fixed value
+          Block.stopTimer = 5 * waitTime                
+          printLog(3, prefix .. stringFormat({
+              GER = "Zug '%s' in Block %d hat Wartezeit %d", 
+              ENG = "Train '%s' in block %d has wait time %d", 
+              FRA = "Le train '%s' dans le bloc %d a un temps d'attente de %d", 
+            }, Train.name, b, math.floor( waitTime )
+          ))
+
         else
           Block.stopTimer = 0
         end
@@ -2297,9 +2440,9 @@ local function run ()
 -- @@@  Make a list of all possible paths for trains who's stop stopTimer ran out
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     if Train and Train ~= DummyTrain then                         -- A real train...
-      if Block.request and Block.stopTimer == 0 then              -- ... has a request and no wait time (anymore)
+      if Block.request and Block.stopTimer <= 0 then              -- ... has a request and no wait time (anymore)
         if not Train.signal or EEPGetSignal( Train.signal ) == TRAINSIGGRN then  -- Does this train has a train signal?
-          printLog(2, prefix, stringFormat({
+          printLog(3, prefix, stringFormat({
               GER = "Zug '%s' sucht einen neuen Pfad ab Block %d",
               ENG = "Train '%s' searches a new path from block %d",
               FRA = "Le train '%s' recherche un nouveau chemin à partir du bloc %d",
@@ -2444,8 +2587,8 @@ local function run ()
       if twoWayBlock then twoWayBlock.reserved = DummyTrain end   -- Also reserve the two way twin block with the dummy train
 
       local ok = EEPSetSignal( Block.signal, (k==#Train.path and BLKSIGRED or BLKSIGGRN), 1)  -- Set the block signals to GREEN, the train may go, except for the last one.
-      printLog(2, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
-
+      printLog(3, prefix, "EEPSetSignal( ",Block.signal,", ",(k==#Train.path and "RED" or "GREEN")," )",(ok == 1 and "" or " error") )
+ 
       if k > 1 then
       for r, Route in pairs(routeTab) do                          -- Search in all routes
         local fromBlock = Route[1]
@@ -2466,7 +2609,7 @@ local function run ()
                 FRA = "Erreur lors de l'inversion du sens du train: L'itinéraire de %d à %d n'est pas la première partie (%d) du chemin %s", 
               }, fromBlock, toBlock, k,table.concat(Train.path, " ") ) 
             )
-            
+
             if not Train.speed then 
               print(stringFormat({
                   GER = "Fehler beim Umkehren der Zugrichtung: Zug '%s' hat keine gespeicherte Geschwindigkeit",
@@ -2495,18 +2638,18 @@ local function run ()
               printLog(3, "C speed set '",trainName,"' ", speed, " ",type(speed), " ", math.type(speed) )
             end
 
-            if not Train.targetSpeed then 
+            if not Train.reversingSpeed then 
               print(stringFormat({
-                  GER = "Fehler beim Umkehren der Zugrichtung: Der Zug '%s' hat keine Zielgeschwindigkeit für die Richtungsumkehr",
-                  ENG = "Error during reversing train direction: Train '%s' does not have a target speed to reverse the direction",
-                  FRA = "Erreur lors de l'inversion de la direction du train: Le train '%s' n'a pas de vitesse cible pour inverser le sens de marche",
+                  GER = "Fehler beim Umkehren der Zugrichtung: Der Zug '%s' hat keine Umkehrgeschwindigkeit",
+                  ENG = "Error during reversing train direction: Train '%s' does not have a reversing speed",
+                  FRA = "Erreur lors de l'inversion de la direction du train: Le train '%s' n'a pas de vitesse d'inversion",
                 }, Train.name )
               )
               
-              Train.targetSpeed = Train.speed
+              Train.reversingSpeed = Train.speed
             end
 
-            local newSpeed = Train.targetSpeed * (Train.speed >= 0 and -1 or 1)  -- Reverse speed
+            local newSpeed = Train.reversingSpeed * (Train.speed >= 0 and -1 or 1)  -- Reverse speed
             local ok = EEPSetTrainSpeed( Train.name, newSpeed )
 
             check(ok, stringFormat({
@@ -2522,6 +2665,11 @@ local function run ()
                 FRA = "Inversion de la vitesse du train '%s' de %.1f à %.1f km/h", 
               }, Train.name, Train.speed, newSpeed )
             )
+
+            if BlockTab[b].twoWayBlock and BlockTab[b].twoWayBlock > 0 then 
+              EEPSetSignal( BlockTab[b].twoWayBlock, BLKSIGGRN, 1 )    -- ... set the two way twin block signal to GREEN as well
+              printLog(3, "Twin two way block ",BlockTab[b].twoWayBlock," set to GREEN")
+            end
             
           end
 
