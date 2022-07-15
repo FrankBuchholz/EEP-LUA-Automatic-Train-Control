@@ -78,6 +78,9 @@ There’s a new User Manual that talks us through each and every step from insta
 The manual now focuses on using the Lua Code Generator, which takes most work out of ur hands.  
 A new demo layout, Peace River, is included.  
 
+- [Automatic Train Traffic on any EEP Layout v2.3 - 10](https://www.youtube.com/watch?v=ISWab3A1tbI&ab_channel=Rudyshobbychannel)  
+This video shows how demo layout Peace River was automated.
+
 ## Collaboration
 
 Any questions, comments and ideas are welcome. You can use one of these channels:

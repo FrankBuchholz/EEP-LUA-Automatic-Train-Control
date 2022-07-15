@@ -77,6 +77,8 @@ Es gibt ein neues Benutzerhandbuch, das jeden einzelnen Schritt von der Installa
 Der Schwerpunkt des Handbuchs liegt jetzt auf der Verwendung des Lua-Code-Generators, der uns die meiste Arbeit abnimmt.  
 Ein neues Demo-Layout, Peace River, ist enthalten.  
 
+- [Automatic Train Traffic on any EEP Layout v2.3 - 10](https://www.youtube.com/watch?v=ISWab3A1tbI&ab_channel=Rudyshobbychannel)  
+Dieses Video zeigt, wie das Demo-Layout Peace River automatisiert wurde.  
 
 ## Zusammenarbeit
 
