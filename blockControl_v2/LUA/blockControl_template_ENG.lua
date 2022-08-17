@@ -51,6 +51,12 @@ local two_way_blocks = {
 --{ 82, 81 }, 
 }
 
+-- Crossings protection:
+-- Pairs or triples of coupled turnouts: automatically add the last turnout to the routes which contain the preceeding turnouts
+local crossings_protection = {
+--  { 1, 2, 3 },
+}
+
 -- Configure how to get from one block to another block by switching turnouts.
 -- Let's introduce constants for better readibility 
 local f = 1 -- turnout position "main"
@@ -64,12 +70,17 @@ local routes = {
 -- Configure required paths between starting blocks, some via blocks to ending blocks.
 -- If similar paths have multiple starting blocks or ending blocks you can combine the paths by putting these blocks into brackets.
 -- A path could have one or more via-blocks as well. If an intermediate part of the path has multiple options, than you could put these blocks into brackets as well.  
-local anti_deadlock_paths = {
+local anti_deadlock_paths = { -- (Optional) Critical paths on which trains have to go to avoid lockdown situations
 --{ { list of parallel from blocks }, list of via blocks, { list of parallel target blocks } },
 --{ {46, 45}, 38, {28, 29, 30} }, -- from block 46 or 45 via block 38 to one of the blocks 28, 29 or 30
 }
 
-
+-- Configure pairs or triples of coupled turnouts to protect crossings
+-- Automatically add the last turnout to the routes which contain the preceding turnouts
+local crossings_protection = { -- (Optional) Coupled turnouts to protect crossings
+-- { 1, 2, 3 }, -- reserve turnout 3 if a route reservers turnouts 1 and 2
+-- { 5, 6 },    -- reserve turnout 6 if a route reservers turnout 5
+}
 
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -87,10 +98,11 @@ blockControl.init({                            -- Initialize the module
 
   trains          = trains,         -- (Optional) Unknows trains get detected automatically, however, such trains do not have a train signal and can go everywhere.
   
-  blockSignals    = block_signals,  -- Block signals
-  twoWayBlocks    = two_way_blocks, -- Two way twin blocks
+  blockSignals    = block_signals,  -- (Optional) Block signals
+  twoWayBlocks    = two_way_blocks, -- (Optional) Two way twin blocks
   routes          = routes,         -- Routes via turnouts from one block to the next block
-  paths           = anti_deadlock_paths, -- Critical paths on which trains can go
+  paths           = anti_deadlock_paths, -- (Optional) Critical paths on which trains can go
+  crossings       = crossings_protection, -- (Optional) Coupled turnouts to protect crossings
 
   MAINSW          = main_signal,    -- ID of the main switch (optional)
 

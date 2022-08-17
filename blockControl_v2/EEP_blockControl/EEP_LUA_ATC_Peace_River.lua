@@ -66,8 +66,8 @@ local routes = {
   { 45, 49, turn={ 40,2, 34,1, 30,1, 32,1, } },
   { 45, 64, turn={ 40,2, 34,1, 30,1, 32,2, 36,2, 35,1, 29,2, 39,2, } },
   { 46, 74, turn={ 2,2, } },
-  { 47, 50, turn={ 23,2, 31,0, 137,2, } }, -- 31 for crossing protection
-  { 48, 50, turn={ 23,1, 31,0, 137,2, } }, -- 31 for crossing protection
+  { 47, 50, turn={ 23,2, 137,2, } },
+  { 48, 50, turn={ 23,1, 137,2, } },
   { 49, 50, turn={ 25,2, 137,1, } },
   { 50, 51, turn={ 26,1, 27,1, 24,2, 22,2, 21,2, 20,2, 76,2, 28,1, } }, -- long detour
   { 50, 73, turn={ 26,1, 27,1, 24,2, 22,2, 21,1, } },
@@ -186,18 +186,18 @@ end
 function EEPMain()
   blockControl.run()
   return 1
-end		
+end
 [EEPLuaData]
-DS_1 = "speed=50.010	block=75	"
-DS_2 = "speed=59.982	block=38	"
-DS_3 = "speed=69.995	block=55	"
-DS_4 = "speed=46.514	block=52	"
-DS_5 = "speed=59.969	block=48	"
-DS_6 = "speed=40.033	block=47	"
-DS_7 = "speed=54.134	block=65	"
-DS_8 = "speed=5.805	"
-DS_9 = "speed=5.080	"
-DS_10 = "speed=0.720	block=77	"
-DS_11 = "speed=69.989	block=67	"
-DS_12 = "speed=39.260	block=46	"
-DS_13 = "speed=1.835	block=37	"
+DS_1 = "speed=38.228	block=38	"
+DS_2 = "speed=59.987	block=55	"
+DS_3 = "speed=30.391	block=52	"
+DS_4 = "speed=47.198	block=56	"
+DS_5 = "speed=55.369	block=54	"
+DS_6 = "speed=32.935	block=45	"
+DS_7 = "speed=4.574	block=65	"
+DS_8 = "speed=49.999	block=62	"
+DS_9 = "speed=57.347	block=67	"
+DS_10 = "speed=38.642	block=77	"
+DS_11 = "speed=70.141	block=66	"
+DS_12 = "speed=35.091	block=63	"
+DS_13 = "speed=30.211	block=64	"

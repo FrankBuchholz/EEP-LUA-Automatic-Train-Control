@@ -72,14 +72,20 @@ The Lua ATC Code Generator can not guess our intentions, it will always generate
 
 - [Automatic Train Traffic on any EEP Layout v2.3 - 09](https://www.youtube.com/watch?v=KGXL2a99CjM&ab_channel=Rudyshobbychannel)  
 This version is all about making things even easier:  
-There’s the new EEP installer that with two mouse clicks installs the content of the ZIP file.  
-The BetterContacts module is included, courtesy of Benjamin Hogl.  
-There’s a new User Manual that talks us through each and every step from installing the oftware up to driving around automatically.  
-The manual now focuses on using the Lua Code Generator, which takes most work out of ur hands.  
-A new demo layout, Peace River, is included.  
+  - There’s the new EEP installer that with two mouse clicks installs the content of the ZIP file.  
+  - The BetterContacts module is included, courtesy of Benjamin Hogl.  
+  - There’s a new User Manual that talks us through each and every step from installing the oftware up to driving around automatically.  
+  - The manual now focuses on using the Lua Code Generator, which takes most work out of ur hands.  
+  - A new demo layout, Peace River, is included.  
 
 - [Automatic Train Traffic on any EEP Layout v2.3 - 10](https://www.youtube.com/watch?v=ISWab3A1tbI&ab_channel=Rudyshobbychannel)  
 This video shows how demo layout Peace River was automated.
+
+- [Automatic Train Traffic on any EEP Layout v2.3 - 11](https://www.youtube.com/watch?v=nq5rGOXgdRQ&ab_channel=Rudyshobbychannel)  
+This video shows how demo layout Swyncombe was automated and describes new features of version 2.3.2:  
+  - Efficient ways to define allowed blocks  
+  - Random wait times, between a min and max value, per train per block  
+  - Info on missing trains during train find mode  
 
 ## Collaboration
 

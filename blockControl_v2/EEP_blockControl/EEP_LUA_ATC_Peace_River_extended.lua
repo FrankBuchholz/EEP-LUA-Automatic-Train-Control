@@ -73,6 +73,12 @@ local block_signals = { 37, 38, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 
 
 local two_way_blocks = { { 45, 46 }, { 52, 87 }, { 53, 88 }, { 54, 89 }, { 55, 90 }, { 56, 91 }, { 57, 86 }, { 58, 85 }, { 59, 84 }, { 60, 83 }, { 61, 82 }, }
 
+-- Crossings protection:
+-- Pairs or triples of coupled turnouts: automatically add the last turnout to the routes which contain the preceeding turnouts
+local crossings_protection = {
+  { 70, 81, 80 }, { 41, 43, 44 },
+}
+
 local routes = {
   { 37, 50, turn={ 25,1, 137,1, } },
   { 37, 69, turn={ 29,1, 39,2, }, reverse=true }, -- manually added
@@ -83,8 +89,8 @@ local routes = {
   { 45, 49, turn={ 40,2, 34,1, 30,1, 32,1, } },
   { 45, 64, turn={ 40,2, 34,1, 30,1, 32,2, 36,2, 35,1, 29,2, 39,2, } },
   { 46, 74, turn={ 2,2, } },
-  { 47, 50, turn={ 23,2, 137,2, 31,0, } }, -- turnout 31 protects the crossing
-  { 48, 50, turn={ 23,1, 137,2, 31,0, } }, -- turnout 31 protects the crossing
+  { 47, 50, turn={ 23,2, 137,2, } },
+  { 48, 50, turn={ 23,1, 137,2, } },
   { 49, 50, turn={ 25,2, 137,1, } },
   { 50, 51, turn={ 26,1, 27,1, 24,2, 22,2, 21,2, 20,2, 76,2, 28,1, } }, -- long detour
   { 50, 73, turn={ 26,1, 27,1, 24,2, 22,2, 21,1, } },
@@ -96,11 +102,11 @@ local routes = {
   { 51, 54, turn={ 44,2, 41,1, 15,2, 16,1, 17,2, } },
   { 51, 55, turn={ 44,2, 41,1, 15,2, 16,2, } },
   { 51, 56, turn={ 44,2, 41,1, 15,1, } },
-  { 51, 82, turn={ 44,1, 42,2, 11,1,                   41,0, } }, -- turnout 41 protects the crossing
-  { 51, 83, turn={ 44,1, 42,2, 11,2, 12,2,             41,0, } }, -- turnout 41 protects the crossing
-  { 51, 84, turn={ 44,1, 42,2, 11,2, 12,1, 13,2,       41,0, } }, -- turnout 41 protects the crossing
-  { 51, 85, turn={ 44,1, 42,2, 11,2, 12,1, 13,1, 14,2, 41,0, } }, -- turnout 41 protects the crossing
-  { 51, 86, turn={ 44,1, 42,2, 11,2, 12,1, 13,1, 14,1, 41,0, } }, -- turnout 41 protects the crossing
+  { 51, 82, turn={ 44,1, 42,2, 11,1, } },
+  { 51, 83, turn={ 44,1, 42,2, 11,2, 12,2, } },
+  { 51, 84, turn={ 44,1, 42,2, 11,2, 12,1, 13,2, } },
+  { 51, 85, turn={ 44,1, 42,2, 11,2, 12,1, 13,1, 14,2, } },
+  { 51, 86, turn={ 44,1, 42,2, 11,2, 12,1, 13,1, 14,1, } },
 
   -- Depot exit to West
   { 52, 38, turn={ 10,1, 9,1, 8,1, 7,2, 80,1, 70,2, } },
@@ -126,11 +132,11 @@ local routes = {
   { 63, 59, turn={ 71,2, 81,1, 3,2, 4,1, 5,2, } },
   { 63, 60, turn={ 71,2, 81,1, 3,2, 4,2, } },
   { 63, 61, turn={ 71,2, 81,1, 3,1, } },
-  { 63, 87, turn={ 71,1, 80,2, 7,2, 8,1, 9,1, 10,1, 81,0, } }, -- turnout 81 protects the crossing
-  { 63, 88, turn={ 71,1, 80,2, 7,2, 8,1, 9,1, 10,2, 81,0, } }, -- turnout 81 protects the crossing
-  { 63, 89, turn={ 71,1, 80,2, 7,2, 8,1, 9,2,       81,0, } }, -- turnout 81 protects the crossing
-  { 63, 90, turn={ 71,1, 80,2, 7,2, 8,2,            81,0, } }, -- turnout 81 protects the crossing
-  { 63, 91, turn={ 71,1, 80,2, 7,1,                 81,0, } }, -- turnout 81 protects the crossing
+  { 63, 87, turn={ 71,1, 80,2, 7,2, 8,1, 9,1, 10,1, } },
+  { 63, 88, turn={ 71,1, 80,2, 7,2, 8,1, 9,1, 10,2, } },
+  { 63, 89, turn={ 71,1, 80,2, 7,2, 8,1, 9,2, } },
+  { 63, 90, turn={ 71,1, 80,2, 7,2, 8,2, } },
+  { 63, 91, turn={ 71,1, 80,2, 7,1, } },
 
   { 64, 46, turn={ 39,2, 29,2, 35,1, 36,2, 32,2, 30,1, 34,1, 40,2, }, reverse=true },
   { 64, 69, turn={ 39,2, 29,1, }, reverse=true },
@@ -154,18 +160,18 @@ local routes = {
   { 79, 64, turn={ 36,1, 35,1, 29,2, 39,2, }, reverse=true },
 
   -- Depot exit to West
-  { 82, 38, turn={                     3,1, 81,2, 70,1, 80,0, } }, -- turnout 80 protects the crossing
-  { 83, 38, turn={               4,2,  3,2, 81,2, 70,1, 80,0, } }, -- turnout 80 protects the crossing
-  { 84, 38, turn={         5,2,  4,1,  3,2, 81,2, 70,1, 80,0, } }, -- turnout 80 protects the crossing
-  { 85, 38, turn={   6,2,  5,1,  4,1,  3,2, 81,2, 70,1, 80,0, } }, -- turnout 80 protects the crossing
-  { 86, 38, turn={   6,1,  5,1,  4,1,  3,2, 81,2, 70,1, 80,0, } }, -- turnout 80 protects the crossing
+  { 82, 38, turn={                     3,1, 81,2, 70,1, } }, 
+  { 83, 38, turn={               4,2,  3,2, 81,2, 70,1, } },
+  { 84, 38, turn={         5,2,  4,1,  3,2, 81,2, 70,1, } },
+  { 85, 38, turn={   6,2,  5,1,  4,1,  3,2, 81,2, 70,1, } },
+  { 86, 38, turn={   6,1,  5,1,  4,1,  3,2, 81,2, 70,1, } },
 
   -- Depot exit to East
-  { 87, 174, turn={ 18,1, 17,1, 16,1, 15,2, 41,2, 43,2, 42,0, } }, -- turnout 42 protects the crossing
-  { 88, 174, turn={ 18,2, 17,1, 16,1, 15,2, 41,2, 43,2, 42,0, } }, -- turnout 42 protects the crossing
-  { 89, 174, turn={       17,2, 16,1, 15,2, 41,2, 43,2, 42,0, } }, -- turnout 42 protects the crossing
-  { 90, 174, turn={             16,2, 15,2, 41,2, 43,2, 42,0, } }, -- turnout 42 protects the crossing
-  { 91, 174, turn={                   15,1, 41,2, 43,2, 42,0, } }, -- turnout 42 protects the crossing
+  { 87, 174, turn={ 18,1, 17,1, 16,1, 15,2, 41,2, 43,2, } },
+  { 88, 174, turn={ 18,2, 17,1, 16,1, 15,2, 41,2, 43,2, } },
+  { 89, 174, turn={       17,2, 16,1, 15,2, 41,2, 43,2, } },
+  { 90, 174, turn={             16,2, 15,2, 41,2, 43,2, } },
+  { 91, 174, turn={                   15,1, 41,2, 43,2, } },
 
 --  { 174, 62, turn={ 76,1, 20,2, 21,2, 22,2, 24,2, 27,2, } }, -- long detour deactivated
   { 174, 65, turn={ 76,1, 20,1, } },
@@ -189,6 +195,7 @@ blockControl.init({                 -- Initialize the module
   twoWayBlocks    = two_way_blocks, -- Two way twin blocks (array or set of related blocks)
   routes          = routes,         -- Routes via turnouts from one block to the next block
   paths           = anti_deadlock_paths, -- Critical paths on which trains have to go to avoid lockdown situations
+  crossings       = crossings_protection, -- Coupled turnouts to protect crossings
 
   MAINSW          = main_signal,    -- ID of the main switch (optional)
 
@@ -232,16 +239,17 @@ function EEPMain()
   return 1
 end
 [EEPLuaData]
-DS_1 = "speed=50.010	block=75	"
-DS_2 = "speed=59.982	block=38	"
-DS_3 = "speed=69.995	block=55	"
-DS_4 = "speed=46.514	block=52	"
-DS_5 = "speed=59.969	block=48	"
-DS_6 = "speed=40.033	block=47	"
-DS_7 = "speed=54.134	block=65	"
-DS_8 = "speed=-24.671	block=73	"
-DS_9 = "speed=69.980	block=60	"
-DS_10 = "speed=0.720	block=77	"
-DS_11 = "speed=69.989	block=67	"
-DS_12 = "speed=39.260	block=46	"
-DS_13 = "speed=1.835	block=37	"
+DS_1 = "block=56	speed=38.639	"
+DS_2 = "block=52	speed=29.153	"
+DS_3 = "block=54	speed=63.777	"
+DS_4 = "block=83	speed=50.029	"
+DS_5 = "block=48	speed=6.279	"
+DS_6 = "block=85	speed=32.450	"
+DS_7 = "block=174	speed=59.755	"
+DS_8 = "block=77	speed=47.817	"
+DS_9 = "block=65	speed=5.307	"
+DS_10 = "block=73	speed=-15.195	"
+DS_11 = "block=67	speed=69.979	"
+DS_12 = "block=74	speed=29.901	"
+DS_13 = "block=82	speed=30.080	"
+DS_14 = "block=45	speed=34.917	"

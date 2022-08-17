@@ -1,3 +1,8 @@
+-- EEP File 'EEP_LUA_ATC_Model_Railroad_Layout_2'
+-- Lua program for module 'blockControl.lua' for track system 'Railroad'
+-- For every block entry sensor enter the following into field 'Lua function' (where ## is the number of the block signal): 
+-- blockControl.enterBlock(Zugname, ##)
+
 local main_signal = 65
 
 -- Allowed blocks and wait times
@@ -52,13 +57,13 @@ local Benelux = {
 }
 
 local Flirt = {
-  [54]=30, [55]=30,	          -- Station Mid CW CW CW CW CW 
+  [54]=30, [55]=30,	          -- Station Mid CW
   [60]= 1,
   [79]=30, [80]=30,           -- Station East
   [62]= 1, [97]= 1, [73]= 1,
   [86]=30, [87]=30,	          -- Station West
   [93]= 1, [74]= 1,
-  [58]=30, [59]=30,	          -- Station Mid CCW CCW CCW CCW
+  [58]=30, [59]=30,	          -- Station Mid CCW
   [52]= 1, [94]= 1,
   [88]=30, [89]=30,           -- Station West
   [96]= 1, [98]= 1, [101]= 1, [53]= 1,
@@ -96,6 +101,12 @@ local two_way_blocks = {
   { 77, 81 }, 
   { 107, 108 }, 
   { 113, 114 }, 
+}
+
+-- Crossings protection:
+-- Pairs or triples of coupled turnouts: automatically add the last turnout to the routes which contain the preceeding turnouts
+local crossings_protection = {
+  { 18, 19 }, { 12, 11 }, { 10, 9 },
 }
 
 local routes = {
@@ -189,7 +200,7 @@ clearlog()
 
 require("BetterContacts_BH2")			 -- Load module BetterContacts, see https://emaps-eep.de/lua/bettercontacts	
 
-blockControl = require("blockControl")   -- Load the module
+blockControl = require("blockControl")   -- Load the module into global variable to support BetterContacts
 
 blockControl.init({                 -- Initialize the module
   logLevel        = 1,              -- (Optional) Log level 0 (default): off, 1: normal, 2: full, 3: extreme
@@ -200,9 +211,7 @@ blockControl.init({                 -- Initialize the module
   twoWayBlocks    = two_way_blocks, -- Two way twin blocks (array or set of related blocks)
   routes          = routes,         -- Routes via turnouts from one block to the next block
   paths           = anti_deadlock_paths, -- Critical paths on which trains have to go to avoid lockdown situations
-
-  trackSystem     = track_system,	-- Track system (required to define block tracks) 
-  blockTracks     = block_tracks,	-- Previous, first, last and nexts tracks of blocks
+  crossings       = crossings_protection, -- Coupled turnouts to protect crossings
 
   MAINSW          = main_signal,    -- ID of the main switch (optional)
 
@@ -218,7 +227,7 @@ blockControl.init({                 -- Initialize the module
 blockControl.set({
 --  logLevel        = 1,              -- (Optional) Log level 0 (default): off, 1: normal, 2: full, 3: extreme
   showTippText    = false,           -- (Optional) Show tipp texts true / false (Later you can toggle the visibility of the tipp texts using the main switch.)
-  start           = false,           -- (Optional) Activate/deactivate main signal. Useful to start automatic block control after finding all known train.
+  start           = false,           -- (Optional) Activate/deactivate main signal. Useful to start automatic block control after finding all known trains.
   startAllTrains  = true,           -- (Optional) Activate/deactivate all train signals
 })
 --]]
@@ -248,15 +257,15 @@ end
 function EEPMain()
   blockControl.run()
   return 1
-end	
+end
 [EEPLuaData]
-DS_1 = "speed=37.353	block=80	"
-DS_2 = "speed=1.693	"
-DS_3 = "speed=47.196	block=59	"
-DS_4 = "speed=-50.039	block=89	"
-DS_5 = "speed=-39.991	block=83	"
-DS_6 = "speed=40.035	block=43	"
-DS_7 = "speed=-40.035	block=78	"
-DS_8 = "speed=39.990	block=51	"
-DS_9 = "speed=41.595	block=107	"
-DS_10 = "speed=59.978	block=54	"
+DS_1 = "speed=32.708	block=97	"
+DS_2 = "speed=30.483	block=55	"
+DS_3 = "speed=31.168	block=94	"
+DS_4 = "speed=-31.104	block=76	"
+DS_5 = "speed=-19.422	block=107	"
+DS_6 = "speed=-13.265	block=60	"
+DS_7 = "speed=40.185	block=51	"
+DS_8 = "speed=0.979	block=71	"
+DS_9 = "speed=-44.026	block=77	"
+DS_10 = "speed=60.048	block=54	"

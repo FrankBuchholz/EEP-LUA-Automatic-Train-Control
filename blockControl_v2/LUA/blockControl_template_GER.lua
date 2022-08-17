@@ -51,6 +51,12 @@ local two_way_blocks = {
 --{ 82, 81 }, 
 }
 
+-- Schutz von Kreuzungen:
+-- Paare oder Dreiergruppen von gekoppelten Weichen: Die letzte Weiche wird automatisch zu den Strecken hinzugefügt, die die vorangehenden Weichen enthalten
+local crossings_protection = {
+--  { 1, 2, 3 },
+}
+
 -- Konfigurieren Sie, wie man von einem Block zu einem anderen Block gelangt, indem man die Weichen umschaltet.
 -- Zur besseren Lesbarkeit führen wir Konstanten ein 
 local f = 1 -- Weichenstellung "Fahrt"
@@ -69,6 +75,12 @@ local anti_deadlock_paths = {
 --{ {46, 45}, 38, {28, 29, 30} }, -- von Block 46 oder 45 über Block 38 zu einem der Blöcke 28, 29 oder 30
 }
 
+-- Paare oder Dreiergruppen von gekoppelten Weichen konfigurieren, um Kreuzungen zu schützen
+-- Automatisches Hinzufügen der letzten Weiche zu den Strecken, die die vorangegangenen Weichen enthalten
+local crossings_protection = { -- (Optional) Gekoppelte Weichen zum Schutz von Kreuzungen
+-- { 1, 2, 3 }, -- Weiche 3 reservieren, wenn eine Strecke die Weichen 1 und 2 reserviert
+-- { 5, 6 },    -- Weiche 6 reservieren, wenn eine Strecke die Weiche 5 reserviert
+}
 
 
 
@@ -87,11 +99,11 @@ blockControl.init({                     -- Initialisieren des Moduls
 
   trains        = trains,               -- (Optional) Unbekannte Züge werden automatisch erkannt, allerdings haben solche Züge kein Zugsignal und können überall fahren.
   
-  blockSignals  = block_signals,        -- Blocksignale
-  twoWayBlocks  = two_way_blocks,       -- Zweiweg-Doppelblöcke
+  blockSignals  = block_signals,        -- (Optional) Blocksignale
+  twoWayBlocks  = two_way_blocks,       -- (Optional) Zweiweg-Doppelblöcke
   routes        = routes,               -- Routen über Weichen von einem Block zum nächsten Block
-  paths         = anti_deadlock_paths,  -- Kritische Pfade, auf denen Züge fahren können
-
+  paths         = anti_deadlock_paths,  -- (Optional) Kritische Pfade, auf denen Züge fahren können
+  crossings       = crossings_protection, -- (Optional) Gekoppelte Weichen zum Schutz von Kreuzungen
 
   MAINSW        = main_signal,          -- ID des Hauptschalters (optional)
 

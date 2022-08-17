@@ -3,7 +3,7 @@
 
 -- Allowed blocks with wait time
 local passenger = { [6]=1,  [7]=1,  [8]=1,  [9]=1,  [10]=1,  [11]=1,  [12]=1,  [13]=1,  }
-local cargo     = { [6]=1, [7]=1, [8]=1, [9]=1, [10]=1, [11]=1, [12]=1, [13]=1, }
+local cargo     = { [6]=1,  [7]=1,  [8]=1,  [9]=1,  [10]=1,  [11]=1,  [12]=1,  [13]=1,  }
 
 local trains = {
  { name="#Orange",      signal=14, allowed=passenger },
@@ -16,26 +16,32 @@ local block_signals = { 6, 7, 8, 9, 10, 11, 12, 13, }
 
 local two_way_blocks = { { 6, 8 }, { 7, 9 }, { 10, 12 }, { 11, 13 }, }
 
-local routes = {
--- CCW via DST using 4 turnouts (manually adjusted to secure the crossing) 
-  { 8, 12, turn={ 2,2, 1,2,     3,0 }},	-- crossing
-  { 8, 13, turn={ 2,1, 3,1, }}, 		-- straight
-  { 9, 12, turn={ 4,1, 1,1, }},			-- straight
-  { 9, 13, turn={ 4,2, 3,2,     1,0 }},	-- crossing
+-- Crossings protection:
+-- Pairs or triples of coupled turnouts: automatically add the last turnout to the routes which contain the preceeding turnouts
+local crossings_protection = {
+  { 1, 2, 3 },
+}
 
--- CCW via track object DST     (manually created)
+local routes = {
+-- CCW via DST using 4 turnouts 
+  { 8, 12, turn={ 2,2, 1,2, }},	-- crossing
+  { 8, 13, turn={ 2,1, 3,1, }}, -- straight
+  { 9, 12, turn={ 4,1, 1,1, }},	-- straight
+  { 9, 13, turn={ 4,2, 3,2, }},	-- crossing
+
+-- CW via DST using 4 turnouts   
+  { 10, 6, turn={ 1,2, 2,2, }},	-- crossing
+  { 10, 7, turn={ 1,1, 4,1, }},	-- straight
+  { 11, 6, turn={ 3,1, 2,1, }},	-- straight 
+  { 11, 7, turn={ 3,2, 4,2, }},	-- crossing
+
+-- CCW via track object DST (manually created)
   { 13, 8, turn={ 5,1 }}, 		-- left/left
   { 13, 9, turn={ 5,2 }}, 		-- left/right
   { 12, 9, turn={ 5,3 }}, 		-- right/right
   { 12, 8, turn={ 5,4 }}, 		-- right/left			
 
--- CW via DST using 4 turnouts  (manually adjusted to secure the crossing)   
-  { 10, 6, turn={ 1,2, 2,2,     3,0 }},	-- crossing
-  { 10, 7, turn={ 1,1, 4,1, }},			-- straight
-  { 11, 6, turn={ 3,1, 2,1, }},			-- straight 
-  { 11, 7, turn={ 3,2, 4,2,     2,0 }},	-- crossing
-
--- CW via track object DST 		(manually created)
+-- CW via track object DST (manually created)
   { 6, 11, turn={ 5,1 }}, 		-- left/left
   { 7, 11, turn={ 5,2 }}, 		-- left/right
   { 7, 10, turn={ 5,3 }}, 		-- right/right
@@ -61,6 +67,7 @@ blockControl.init({                 -- Initialize the module
   twoWayBlocks    = two_way_blocks, -- Two way twin blocks (array or set of related blocks)
   routes          = routes,         -- Routes via turnouts from one block to the next block
   paths           = anti_deadlock_paths, -- Critical paths on which trains have to go to avoid lockdown situations
+  crossings       = crossings_protection, -- Coupled turnouts to protect crossings
 
   MAINSW          = main_signal,    -- ID of the main switch (optional)
 
