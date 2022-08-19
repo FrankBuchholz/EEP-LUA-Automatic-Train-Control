@@ -60,7 +60,7 @@ Version history:
 - Store train data in tag text and slot if both stores are available
 - Show missing trains during find mode
 
-2.4.0.  17.08.2022
+2.4.0.  19.08.2022
 - Improved messages
 - Optimized function to leave blocks which is required to integrate EEP depots
 - New option to define pairs of turnouts for crossing protection
@@ -69,7 +69,7 @@ Version history:
 
 --]] 
 
-local _VERSION = 'v2.4.0 - 17.08.2022'
+local _VERSION = 'v2.4.0 - 19.08.2022'
 
 -- @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 -- @@@  MODULE blockControl

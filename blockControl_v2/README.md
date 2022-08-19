@@ -9,8 +9,8 @@ You find an explanation on how it works and on how to fill the Lua tables with d
 
 ## Files
 
-You can download version 2 of the EEP Lua Automatic Traffic Control Project here:
-[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
+You can download the latest version of the EEP Lua Automatic Traffic Control project here:
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/releases/latest)
 
 The EEP folder contains several working EEP demo layouts with the Lua code and the layout definition included.
 

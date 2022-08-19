@@ -41,7 +41,7 @@ You find two versions of this project:
 - Version 2 uses enhanced modularized code with less configuration needed, more options, stronger robustness, consistency checks and extended logging.  
 Go for this version!  
 You can download the package here:
-[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/raw/main/blockControl_v2/EEP_blockControl.zip)
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/releases/latest)
 
 The "TC" folder contains the 5 layouts in Traincontroller, for those who might like to tinker with TC. Free demo version: <https://www.freiwald.com/pages/download.htm>
 

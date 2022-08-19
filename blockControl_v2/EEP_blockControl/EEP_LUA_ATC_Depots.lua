@@ -14,10 +14,10 @@ local all = {
   [9]  = rt,    -- Station CW
   [19] = rt,    -- Station CW 
 
-  [12] = 1,     -- Entry Depot 1 
+  [12] = 1,     -- Entry Depot 2 
   [11] = 1,     -- Exit Depot 1
 
-  [5]  = 1,     -- Entry Depot 2 
+  [5]  = 1,     -- Entry Depot 1 
   [6]  = 1,     -- Exit Depot 2
 }
 
@@ -114,9 +114,9 @@ function EEPMain()
   return 1
 end
 [EEPLuaData]
-DS_1 = "speed=18.778	block=19	"
+DS_1 = "speed=44.996	block=6	"
 DS_2 = "speed=-38.147	block=11	"
 DS_3 = "speed=-4.055	block=8	"
-DS_4 = "speed=3.123	"
+DS_4 = "speed=53.984	block=19	"
 DS_5 = "speed=49.967	"
 DS_6 = "speed=41.597	block=18	"
