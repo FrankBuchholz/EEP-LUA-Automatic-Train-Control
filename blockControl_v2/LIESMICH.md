@@ -10,7 +10,7 @@ Eine Erklärung, wie es funktioniert und wie man die Lua-Tabellen mit Daten fül
 ## Dateien
 
 Sie können die aktuelle Version des EEP Lua Automatic Traffic Control Projekts hier herunterladen:
-[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/releases/latest)
+[`EEP_blockControl.zip`](https://github.com/FrankBuchholz/EEP-LUA-Automatic-Train-Control/releases/latest/download/EEP_blockControl.zip)
 
 Der EEP-Ordner enthält mehrere funktionierende EEP-Demo-Layouts mit dem Lua-Code und der Layoutdefinition.
 
