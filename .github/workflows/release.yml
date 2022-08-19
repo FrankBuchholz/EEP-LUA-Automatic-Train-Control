@@ -1,15 +1,13 @@
-# Create zip archive containing the files of version 2
+# Create a release including a zip archive containing the files of version 2
 
-name: Archive files for version 2
+name: Create release for tag
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push request events but only for the main branch and only if specific files have been changed
+  # Triggers the workflow whenever a new tag is created
   push:
-    branches: 
-      - dummy
-    paths: 
-      - blockControl_v2/**
+    tags:
+      - '*'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,7 +15,8 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job
-  zip-files:
+  release:
+    name: Create release for tag
   
     # Condition for execution
     if: github.repository == 'FrankBuchholz/EEP-LUA-Automatic-Train-Control'
@@ -42,16 +41,27 @@ jobs:
       run: |
         zip -r ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/*.pdf blockControl_v2/Installation blockControl_v2/Installation.eep
 
-    - name: Upload artifact # The artifact shows up at the action log
-      if: ${{ success() }}
-      uses: actions/upload-artifact@v2
+    - name: Create release and add zip file
+      uses: actions/github-script@v6
       with:
-        path: ${{ github.workspace }}/blockControl_v2
-        
-    - name: Commit & push # transfer the new zip file back into the repository
-      run: |
-        git config --local user.email "action@github.com"   # dummy 
-        git config --local user.name "GitHub Action"        # or use ${{ github.actor }}
-        git add blockControl_v2/EEP_blockControl.zip
-        git commit -m "Update blockControl_v2/EEP_blockControl.zip"
-        git push
+        script: |
+          try {
+            const tag = context.ref.split('/').pop();
+            core.info('Release tag: ' + tag);
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: tag,
+              tag_name: tag
+            });
+            const fs = require('fs').promises;
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.data.id,
+              name: 'EEP_blockControl.zip',
+              data: await fs.readFile('./blockControl_v2/EEP_blockControl.zip')
+            });
+          } catch (error) {
+            core.setFailed(error.message);
+          }
