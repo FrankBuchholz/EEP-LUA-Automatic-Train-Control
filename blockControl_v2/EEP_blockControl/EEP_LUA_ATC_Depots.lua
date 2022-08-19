@@ -3,8 +3,6 @@
 -- For every block entry sensor enter the following into field 'Lua function' (where ## is the number of the block signal):
 --   blockControl.enterBlock(Zugname, ##)
 
-require("PrintToFile_BH2"){file="eventLog.txt", output=2}
-
 -- Allowed blocks with wait time
 local rt = { 20, 35 }
 -- The additional entry showing dummy block 0 prevents some error messages but does not influence traffic on this layout.
@@ -119,6 +117,6 @@ end
 DS_1 = "speed=18.778	block=19	"
 DS_2 = "speed=-38.147	block=11	"
 DS_3 = "speed=-4.055	block=8	"
-DS_4 = "speed=20.080	block=5	"
+DS_4 = "speed=3.123	"
 DS_5 = "speed=49.967	"
 DS_6 = "speed=41.597	block=18	"

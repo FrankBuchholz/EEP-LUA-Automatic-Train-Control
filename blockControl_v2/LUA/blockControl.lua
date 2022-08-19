@@ -3013,7 +3013,7 @@ enterBlock = function (trainName, b)              -- (The local variable 'enterB
     
       -- Consistency checks
       if path[1] and path[2] then                 -- The train has a path 
-        check(b == path[2], stringFormat({
+        check(b == path[2] or path[2] == 0, stringFormat({
             GER = "Zug '%s' fährt in Block %d ein, sollte aber in Block %d einfahren", 
             ENG = "Train '%s' enters block %d but was expected to enter block %d", 
             FRA = "Le train '%s' entre dans le bloc %d mais était censé entrer dans le bloc %d", 
