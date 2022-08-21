@@ -39,6 +39,7 @@ jobs:
              
     - name: Build zip file
       run: |
+        rm ./blockControl_v2/EEP_blockControl.zip
         zip -r ./blockControl_v2/EEP_blockControl.zip blockControl_v2/EEP_blockControl/ blockControl_v2/LUA/ blockControl_v2/GBS/ blockControl_v2/*.pdf blockControl_v2/Installation blockControl_v2/Installation.eep
 
     - name: Create release and add zip file
