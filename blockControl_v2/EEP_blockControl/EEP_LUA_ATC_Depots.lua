@@ -1,10 +1,10 @@
--- EEP File 'Depots B'
+-- EEP File 'Depots'
 -- Lua program for module 'blockControl.lua' for track system 'Railroad'
 -- For every block entry sensor enter the following into field 'Lua function' (where ## is the number of the block signal):
 --   blockControl.enterBlock(Zugname, ##)
 
 -- Allowed blocks with wait time
-local rt = { 20, 35 }
+local rt = { 40, 60 }
 -- The additional entry showing dummy block 0 prevents some error messages but does not influence traffic on this layout.
 local all = { 
   [0]  = 1,     -- (additional) Trains are allowed to leave the controlled part of the layout
@@ -14,25 +14,25 @@ local all = {
   [9]  = rt,    -- Station CW
   [19] = rt,    -- Station CW 
 
-  [12] = 1,     -- Entry Depot 2 
-  [11] = 1,     -- Exit Depot 1
-
-  [5]  = 1,     -- Entry Depot 1 
-  [6]  = 1,     -- Exit Depot 2
+  [6]  = 99,    -- Entry Depot 1 (ensure to drive to the end of the track)  
+  [7]  = 1,     -- Exit Depot 1
+  [11] = 99,    -- Entry Depot 2 (ensure to drive to the end of the track) 
+  [12] = 1,     -- Exit Depot 2 
 }
 
 local trains = {
+  { name="#DB_216 beige",   signal=22, slot=4, speed=70, allowed=all },
+  { name="#Shuttle Red",    signal=24, slot=6, speed=50, allowed=all },
+  { name="#Steam",          signal= 4, slot=3, speed=50, allowed=all },
   { name="#Blue",           signal=30, slot=1, speed=70, allowed=all },
   { name="#Orange",         signal=14, slot=2, speed=70, allowed=all },
-  { name="#Steam",          signal= 4, slot=3, speed=50, allowed=all },
-  { name="#DB_216 beige",   signal=22, slot=4, speed=70, allowed=all },
   { name="#Shuttle Yellow", signal=23, slot=5, speed=50, allowed=all },
-  { name="#Shuttle Red",    signal=24, slot=6, speed=50, allowed=all },
 }
 
 local main_signal = 3
 
-local block_signals = { 5, 6, 8, 9, 11, 12, 18, 19, }
+local block_signals = { 6, 7, 8, 9, 11, 12, 18, 19, }
+-- Blocks without any contact calling the corresponding enterBlock function: 8, 
 -- 8 signals use BLKSIGRED = 1, BLKSIGGRN = 2
 
 local two_way_blocks = { { 9, 18 }, }
@@ -40,28 +40,20 @@ local two_way_blocks = { { 9, 18 }, }
 -- The additional entries showing dummy block 0 prevent some error messages but do not influence traffic on this layout.
 -- The deactivated entries had been generated but are useless on this layout.
 local routes = {
-  { 0, 5, },                                    -- (additional) Train enters controlled part of the layout
-  { 0, 11, },                                   -- (additional) Train enters controlled part of the layout
-
-  { 5, 9, turn={ 7,2, 2,2, 17,1, } },         	-- To station CW
-  { 5, 19, turn={ 7,2, 2,2, 17,2, } },         	-- To station CW
-
---{ 6, 5, turn={ 21,1, } }, 					-- (deactivated)
-  { 6, 0, },                                    -- (additional) Train leaves controlled part of the layout
-
-  { 8, 12, turn={ 2,1, 7,1, 13,1, } },         	-- From station CCW
-
-  { 9, 6, turn={ 16,1, 1,2, 10,2, 20,2, } },  	-- From station CW
-
-  { 11, 8, turn={ 10,1, 1,1, } },        		-- To station CCW
-  { 11, 18, turn={ 10,1, 1,2, 16,1, } },        -- To station CCW
-
---{ 12, 12, turn={ 13,undefined, } }, 			-- (deactivated)
-  { 12, 0, },                                   -- (additional) Train leaves controlled part of the layout
-
-  { 18, 12, turn={ 17,1, 2,2, 7,1, 13,1, } },   -- From station CCW
-
-  { 19, 6, turn={ 16,2, 1,2, 10,2, 20,2, } },  	-- From station CW
+  { 0, 7, },                                            -- (additional) Train enters controlled part of the layout
+  { 0, 12, },                                           -- (additional) Train enters controlled part of the layout
+  { 6, 8, turn={ 13,1, 1,2, }, reverse=true },          -- (useless) Trains never reach the signal behind a depot entry
+  { 6, 18, turn={ 13,1, 1,1, 2,1, }, reverse=true },    -- (useless) Trains never reach the signal behind a depot entry
+  { 7, 8, turn={ 13,2, 1,2, } },
+  { 7, 18, turn={ 13,2, 1,1, 2,1, } },
+  { 8, 11, turn={ 16,1, 15,2, } },
+  { 9, 6, turn={ 2,1, 1,1, 13,1, } },
+  { 11, 9, turn={ 15,2, 16,2, 17,1, }, reverse=true },  -- (useless) Trains never reach the signal behind a depot entry
+  { 11, 19, turn={ 15,2, 16,2, 17,2, }, reverse=true }, -- (useless) Trains never reach the signal behind a depot entry
+  { 12, 9, turn={ 15,1, 16,2, 17,1, } },
+  { 12, 19, turn={ 15,1, 16,2, 17,2, } },
+  { 18, 11, turn={ 17,1, 16,2, 15,2, } },
+  { 19, 6, turn={ 2,2, 1,1, 13,1, } },
 }
 
 local anti_deadlock_paths = { -- (Optional) Critical paths on which trains have to go to avoid lockdown situations
@@ -113,10 +105,11 @@ function EEPMain()
   blockControl.run()
   return 1
 end
+
 [EEPLuaData]
-DS_1 = "speed=44.996	block=6	"
-DS_2 = "speed=-38.147	block=11	"
-DS_3 = "speed=-4.055	block=8	"
-DS_4 = "speed=53.984	block=19	"
-DS_5 = "speed=49.967	"
-DS_6 = "speed=41.597	block=18	"
+DS_1 = "speed=3.172	"
+DS_2 = "speed=69.997	"
+DS_3 = "speed=-26.507	block=19	"
+DS_4 = "speed=60.039	"
+DS_5 = "speed=49.995	"
+DS_6 = "speed=25.221	"
